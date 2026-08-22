@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "vertex-promo",
+  "name": "Vertex promotional credit",
+  "provider": "google-cloud",
+  "colour": "#6C7BF0",
+  "kind": "promotional",
+  "unit": "usd",
+  "how_you_get_it": "Granted alongside some Google Cloud accounts.",
+  "expiry": {
+    "kind": "fixed_date"
+  },
+  "leftover": "voids",
+  "balance": {
+    "method": "console_only",
+    "where": "the Cloud Console billing page",
+    "why_not_api": "No API returns a promotional credit remainder. Checked 2026-08-21.",
+    "where_url": "https://console.cloud.google.com/billing"
+  },
+  "coverage": [
+    {
+      "door": "vertex-ai",
+      "models": [
+        "gemini-*",
+        "veo-*",
+        "imagen-*"
+      ],
+      "what": "Gemini, Veo, Imagen",
+      "verdict": "covered",
+      "clock": "stable",
+      "note": "Google's own models billed as Vertex AI usage.",
+      "verified_on": "2026-08-21",
+      "source": "https://cloud.google.com/vertex-ai/pricing"
+    }
+  ],
+  "sources": [
+    "https://cloud.google.com/vertex-ai/pricing"
+  ],
+  "verified_on": "2026-08-21",
+  "contributed_by": "manymoats"
+}

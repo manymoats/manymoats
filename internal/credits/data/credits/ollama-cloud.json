@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "id": "ollama-cloud",
+  "name": "Ollama Cloud Pro",
+  "provider": "ollama",
+  "colour": "#5FD0C0",
+  "kind": "included_in_subscription",
+  "unit": "requests",
+  "how_you_get_it": "A paid Ollama Pro subscription. The included model list is what the money buys.",
+  "trap": "Which models are included changes without notice. kimi-k3 answered 402 on 2026-08-15 and 200 on 2026-08-21 — six days apart. Every answer here is on the short clock for that reason.",
+  "expiry": {
+    "kind": "weekly_reset"
+  },
+  "leftover": "resets",
+  "balance": {
+    "method": "console_only",
+    "where": "your Ollama account settings",
+    "why_not_api": "No endpoint returns the remaining weekly figure, and the extra-usage balance is account-private. Checked 2026-08-21.",
+    "where_url": "https://ollama.com/settings"
+  },
+  "coverage": [
+    {
+      "door": "ollama-cloud",
+      "models": [
+        "kimi-k3",
+        "kimi-k3:cloud"
+      ],
+      "what": "kimi-k3",
+      "verdict": "covered",
+      "note": "re-probed 2026-08-21: HTTP 200 on kimi-k3 and kimi-k3:cloud. The 402 recorded on 2026-08-15 is no longer true.",
+      "verified_on": "2026-08-21"
+    },
+    {
+      "door": "ollama-cloud",
+      "models": [
+        "glm-5.2",
+        "deepseek-v4-*",
+        "minimax-m3",
+        "kimi-k2.7-code"
+      ],
+      "what": "the included model set",
+      "verdict": "covered",
+      "note": "answered 200 on the included set.",
+      "verified_on": "2026-08-21"
+    }
+  ],
+  "verified_on": "2026-08-21",
+  "sources": [
+    "https://ollama.com/pricing"
+  ],
+  "contributed_by": "manymoats"
+}

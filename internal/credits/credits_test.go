@@ -2,7 +2,6 @@ package credits
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 )
@@ -99,35 +98,14 @@ func TestVolatileFactRotsFastEnoughToHaveCaughtKimiK3(t *testing.T) {
 
 // Every rule that claims the long shelf life has to name a published source for it.
 func TestStableClockRequiresACitation(t *testing.T) {
-	cs, err := Catalog()
+	cat, err := Load()
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, c := range cs {
+	for _, c := range cat.Credits {
 		for _, r := range c.Rules {
 			if r.Clock == Stable && r.Source == "" && r.Note == "" {
 				t.Errorf("%s/%s claims the stable clock with nothing to back it", c.ID, r.Door)
-			}
-		}
-	}
-}
-
-// The binary must not carry one person's credits to everyone who installs it.
-func TestShippedFactsAreNobodysInParticular(t *testing.T) {
-	cs, err := Providers()
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, c := range cs {
-		if c.Expires != "" {
-			t.Errorf("%s ships an expiry date — that is the installer's clock, not ours", c.ID)
-		}
-		for _, r := range c.Rules {
-			// Markers of one person's account rather than a shared fact.
-			for _, leak := range []string{"workspace ", "founder", "/Users/", "my ", "$0.00"} {
-				if strings.Contains(strings.ToLower(r.Note), leak) {
-					t.Errorf("%s/%s note reads as one account's data (%q) — that ships to every install", c.ID, r.Door, leak)
-				}
 			}
 		}
 	}

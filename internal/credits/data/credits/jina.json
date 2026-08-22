@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "id": "jina",
+  "name": "Jina",
+  "provider": "jina",
+  "colour": "#4A9EFF",
+  "kind": "free_quota",
+  "unit": "tokens",
+  "how_you_get_it": "Request an API key from jina.ai. New keys arrive with free tokens.",
+  "trap": "How many tokens a new key gets is UNVERIFIED here. The 10 million figure everyone quotes comes from secondary trackers, not from Jina, so this catalog does not repeat it.",
+  "expiry": {
+    "kind": "unknown"
+  },
+  "leftover": "unknown",
+  "balance": {
+    "method": "console_only",
+    "where": "the Jina key dashboard",
+    "why_not_api": "The remaining token balance is shown on the key dashboard. Checked 2026-08-21.",
+    "where_url": "https://jina.ai/api-dashboard"
+  },
+  "coverage": [
+    {
+      "door": "jina-embeddings",
+      "models": [
+        "jina-embeddings-*",
+        "jina-reranker-*"
+      ],
+      "what": "turning text into numbers you can search",
+      "verdict": "covered",
+      "note": "new keys do arrive with free tokens; how many is unverified, so we do not print a figure.",
+      "verified_on": "2026-08-21",
+      "source": "https://jina.ai/embeddings/"
+    }
+  ],
+  "sources": [
+    "https://jina.ai/embeddings/"
+  ],
+  "verified_on": "2026-08-21",
+  "contributed_by": "manymoats"
+}

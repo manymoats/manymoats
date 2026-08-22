@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "modal",
+  "name": "Modal",
+  "provider": "modal",
+  "colour": "#7C6AEF",
+  "kind": "free_quota",
+  "unit": "usd",
+  "face_value": 30,
+  "how_you_get_it": "Create a Modal account. The Starter plan includes a monthly compute grant.",
+  "trap": "The grant is monthly and the unused part voids at the reset. Not spending it is pure loss, not saving.",
+  "expiry": {
+    "kind": "monthly_reset"
+  },
+  "leftover": "voids",
+  "balance": {
+    "method": "console_only",
+    "where": "the Modal usage dashboard",
+    "why_not_api": "The remaining monthly grant is shown in the dashboard. Checked 2026-08-21.",
+    "where_url": "https://modal.com/settings/usage"
+  },
+  "coverage": [
+    {
+      "door": "modal-gpu",
+      "models": [
+        "*"
+      ],
+      "what": "GPU and CPU compute",
+      "verdict": "covered",
+      "clock": "stable",
+      "note": "the Starter grant is spent against compute time.",
+      "verified_on": "2026-08-21",
+      "source": "https://modal.com/pricing"
+    }
+  ],
+  "sources": [
+    "https://modal.com/pricing"
+  ],
+  "verified_on": "2026-08-21",
+  "contributed_by": "manymoats"
+}

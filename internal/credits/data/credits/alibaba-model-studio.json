@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "id": "alibaba-model-studio",
+  "name": "Alibaba Cloud Model Studio",
+  "provider": "alibaba",
+  "colour": "#F55036",
+  "kind": "free_quota",
+  "unit": "tokens",
+  "how_you_get_it": "Open a Model Studio account. Each model carries its own free grant.",
+  "trap": "The grant is per model, not per account, and each one runs its own 90-day clock that does not pause. The leftover voids.",
+  "expiry": {
+    "kind": "per_model",
+    "days": 90
+  },
+  "leftover": "voids",
+  "balance": {
+    "method": "console_only",
+    "where": "the Model Studio console",
+    "why_not_api": "GET /api/v1/models lists the catalog with no free-quota field and GET /api/v1/quotas returns rate limits, not the remaining grant. Measured 2026-08-21.",
+    "where_url": "https://bailian.console.alibabacloud.com"
+  },
+  "coverage": [
+    {
+      "door": "alibaba-model-studio",
+      "models": [
+        "qwen*",
+        "wan*",
+        "deepseek-*",
+        "glm-*"
+      ],
+      "what": "the models with a free grant",
+      "verdict": "covered",
+      "note": "each model has its own 90-day grant; the remainder is only on the console.",
+      "verified_on": "2026-08-21"
+    }
+  ],
+  "sources": [
+    "https://www.alibabacloud.com/help/en/model-studio/models"
+  ],
+  "verified_on": "2026-08-21",
+  "contributed_by": "manymoats"
+}

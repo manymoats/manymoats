@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "fal",
+  "name": "fal.ai",
+  "provider": "fal",
+  "colour": "#E8E3D9",
+  "kind": "prepaid",
+  "unit": "usd",
+  "how_you_get_it": "Top up a fal account. Usage is metered against the balance.",
+  "expiry": {
+    "kind": "none"
+  },
+  "leftover": "carries",
+  "balance": {
+    "method": "api",
+    "key_env": [
+      "FAL_KEY"
+    ],
+    "key_files": [
+      "manymoats-kpf/fal.env"
+    ],
+    "where": "https://rest.alpha.fal.ai/billing/user_balance"
+  },
+  "coverage": [
+    {
+      "door": "fal-api",
+      "models": [
+        "*"
+      ],
+      "what": "anything fal hosts",
+      "verdict": "covered",
+      "note": "the balance is metered against whatever you run.",
+      "verified_on": "2026-08-21"
+    }
+  ],
+  "sources": [
+    "https://fal.ai/pricing"
+  ],
+  "verified_on": "2026-08-21",
+  "contributed_by": "manymoats"
+}

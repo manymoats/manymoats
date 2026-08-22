@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "id": "cursor",
+  "name": "Cursor",
+  "provider": "cursor",
+  "colour": "#C9D1D9",
+  "kind": "included_in_subscription",
+  "unit": "requests",
+  "how_you_get_it": "A paid Cursor subscription.",
+  "expiry": {
+    "kind": "monthly_reset"
+  },
+  "leftover": "resets",
+  "balance": {
+    "method": "console_only",
+    "where": "Cursor's own usage screen",
+    "why_not_api": "Quota percentages are shown in the app only. There is no public API. Checked 2026-08-21."
+  },
+  "coverage": [
+    {
+      "door": "cursor-app",
+      "models": [
+        "*"
+      ],
+      "what": "the models Cursor includes",
+      "verdict": "covered",
+      "note": "the included set is whatever your plan lists this month.",
+      "verified_on": "2026-08-21"
+    }
+  ],
+  "sources": [
+    "https://cursor.com/pricing"
+  ],
+  "verified_on": "2026-08-21",
+  "contributed_by": "manymoats"
+}

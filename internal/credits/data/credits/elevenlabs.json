@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "id": "elevenlabs",
+  "name": "ElevenLabs Free",
+  "provider": "elevenlabs",
+  "colour": "#CBB9F2",
+  "kind": "free_quota",
+  "unit": "credits",
+  "how_you_get_it": "Create a free ElevenLabs account.",
+  "trap": "The 10,000 a month are credits, not characters — different models spend them at different rates. And the free tier carries no commercial licence.",
+  "expiry": {
+    "kind": "monthly_reset"
+  },
+  "leftover": "voids",
+  "balance": {
+    "method": "console_only",
+    "where": "the ElevenLabs settings page",
+    "why_not_api": "The remaining monthly credits are shown in the dashboard. Checked 2026-08-21.",
+    "where_url": "https://elevenlabs.io/app/settings"
+  },
+  "coverage": [
+    {
+      "door": "elevenlabs-api",
+      "models": [
+        "eleven_*"
+      ],
+      "what": "turning text into speech",
+      "verdict": "covered",
+      "clock": "stable",
+      "note": "10,000 credits a month. Credits, not characters.",
+      "verified_on": "2026-08-21",
+      "source": "https://elevenlabs.io/pricing"
+    },
+    {
+      "door": "elevenlabs-commercial",
+      "models": [
+        "*"
+      ],
+      "what": "using the audio commercially",
+      "verdict": "not covered",
+      "clock": "stable",
+      "note": "the commercial licence starts at the Starter plan, not on Free.",
+      "verified_on": "2026-08-21",
+      "source": "https://elevenlabs.io/pricing"
+    }
+  ],
+  "sources": [
+    "https://elevenlabs.io/pricing"
+  ],
+  "verified_on": "2026-08-21",
+  "contributed_by": "manymoats"
+}

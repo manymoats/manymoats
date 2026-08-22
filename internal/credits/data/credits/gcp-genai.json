@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "id": "gcp-genai",
+  "name": "Google Cloud GenAI credit",
+  "provider": "google-cloud",
+  "colour": "#6C7BF0",
+  "kind": "promotional",
+  "unit": "usd",
+  "face_value": 1000,
+  "how_you_get_it": "Granted by Google to some Cloud accounts. Not something you can sign up for.",
+  "trap": "It is scoped to search products. It does not pay for Gemini, Veo or embeddings, which is what most people assume a Google AI credit is for.",
+  "expiry": {
+    "kind": "days_from_grant",
+    "days": 365
+  },
+  "leftover": "voids",
+  "balance": {
+    "method": "console_only",
+    "where": "the Cloud Console billing page",
+    "why_not_api": "Same limitation as the trial credit: no API returns a promotional credit remainder. Checked 2026-08-21.",
+    "where_url": "https://console.cloud.google.com/billing"
+  },
+  "coverage": [
+    {
+      "door": "vertex-ai-search",
+      "models": [
+        "*"
+      ],
+      "what": "search and grounding products",
+      "verdict": "covered",
+      "clock": "stable",
+      "note": "the grant is scoped to Agent Search and Vertex AI Search usage.",
+      "verified_on": "2026-08-21",
+      "source": "https://cloud.google.com/generative-ai-app-builder/pricing"
+    },
+    {
+      "door": "vertex-ai",
+      "models": [
+        "gemini-*",
+        "veo-*",
+        "imagen-*"
+      ],
+      "what": "Gemini, Veo, Imagen",
+      "verdict": "not covered",
+      "clock": "stable",
+      "note": "this credit is scoped to search products, not to model usage.",
+      "verified_on": "2026-08-21",
+      "source": "https://cloud.google.com/generative-ai-app-builder/pricing"
+    }
+  ],
+  "sources": [
+    "https://cloud.google.com/generative-ai-app-builder/pricing"
+  ],
+  "verified_on": "2026-08-21",
+  "contributed_by": "manymoats"
+}

@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "id": "openrouter-free",
+  "name": "OpenRouter free models",
+  "provider": "openrouter",
+  "colour": "#C9D1D9",
+  "kind": "free_quota",
+  "unit": "requests",
+  "how_you_get_it": "Create an OpenRouter key. Models whose id ends in :free cost nothing per token.",
+  "trap": "Free models are rate-limited rather than granted, and the limit changes. A daily request cap is not a pot of money.",
+  "expiry": {
+    "kind": "unknown"
+  },
+  "leftover": "resets",
+  "balance": {
+    "method": "none",
+    "why_not_api": "GET /api/v1/key is documented to return limit and usage, but this catalog has not run it. An unproven probe ships as no probe at all."
+  },
+  "coverage": [
+    {
+      "door": "openrouter",
+      "models": [
+        "*:free"
+      ],
+      "what": "models whose id ends in :free",
+      "verdict": "covered",
+      "note": "free variants cost nothing per token; they are capped by rate, not by grant.",
+      "verified_on": "2026-08-21",
+      "source": "https://openrouter.ai/docs/api-reference/limits"
+    }
+  ],
+  "sources": [
+    "https://openrouter.ai/docs/api-reference/limits"
+  ],
+  "verified_on": "2026-08-21",
+  "contributed_by": "manymoats"
+}

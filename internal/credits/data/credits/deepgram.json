@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "id": "deepgram",
+  "name": "Deepgram",
+  "provider": "deepgram",
+  "colour": "#C9D1D9",
+  "kind": "promotional",
+  "unit": "usd",
+  "face_value": 200,
+  "how_you_get_it": "Sign up for a Deepgram account.",
+  "expiry": {
+    "kind": "unknown"
+  },
+  "leftover": "unknown",
+  "balance": {
+    "method": "none",
+    "why_not_api": "Deepgram's management API exposes project balances, but this catalog has never run it. Until a real call returns a real number the probe stays unwired."
+  },
+  "coverage": [
+    {
+      "door": "deepgram-api",
+      "models": [
+        "nova-*"
+      ],
+      "what": "speech to text",
+      "verdict": "covered",
+      "note": "the signup credit is spent against transcription.",
+      "verified_on": "2026-08-21",
+      "source": "https://deepgram.com/pricing"
+    }
+  ],
+  "sources": [
+    "https://deepgram.com/pricing"
+  ],
+  "verified_on": "2026-08-21",
+  "contributed_by": "manymoats"
+}

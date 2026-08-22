@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "id": "moonshot",
+  "name": "Moonshot",
+  "provider": "moonshot",
+  "colour": "#E8E3D9",
+  "kind": "prepaid",
+  "unit": "usd",
+  "how_you_get_it": "Top up a Moonshot account. Vouchers are granted on top of what you pay.",
+  "expiry": {
+    "kind": "unknown"
+  },
+  "leftover": "carries",
+  "balance": {
+    "method": "api",
+    "key_env": [
+      "MOONSHOT_API_KEY"
+    ],
+    "key_files": [
+      "manymoats-kpf/moonshot.env"
+    ],
+    "where": "https://api.moonshot.ai/v1/users/me/balance"
+  },
+  "coverage": [
+    {
+      "door": "moonshot-api",
+      "models": [
+        "kimi-k3",
+        "kimi-k2.7-code",
+        "kimi-k2.6"
+      ],
+      "what": "the Kimi models",
+      "verdict": "covered",
+      "note": "answered on the direct Moonshot key.",
+      "verified_on": "2026-08-21"
+    }
+  ],
+  "sources": [
+    "https://platform.moonshot.ai/docs"
+  ],
+  "verified_on": "2026-08-21",
+  "contributed_by": "manymoats"
+}

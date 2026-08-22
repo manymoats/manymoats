@@ -33,6 +33,22 @@ n     name mode      h  machines
 a     show idle      q  quit
 ```
 
+### `manymoats credits`
+
+What your free AI credits actually pay for, and what only looks free.
+
+Sorted by what dies soonest, with the daily spend it would take to use a credit
+before it expires. `manymoats credits covers <model>` answers the question that
+actually costs people money: the same model often has two doors, and only one of
+them is on your credit.
+
+Nothing here is a guess. What can't be checked says `unknown`, and every answer
+prints its own age — a claim about what a plan includes goes quiet after 14 days,
+a published terms page lasts 180.
+
+Your own figures live in `~/.manymoats/credits/holdings.json`. They are never
+uploaded and never ship in the binary.
+
 ## Update
 
 ```bash

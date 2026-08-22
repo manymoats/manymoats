@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "id": "cerebras",
+  "name": "Cerebras",
+  "provider": "cerebras",
+  "colour": "#F55036",
+  "kind": "promotional",
+  "unit": "usd",
+  "face_value": 5,
+  "how_you_get_it": "Add a card to a Cerebras account. The credit only appears after the card does.",
+  "trap": "The widely-repeated 1 million tokens a day is a RATE LIMIT, not a free grant. Aggregator sites re-render it as free tokens. The only money here is $5, it needs a card, and it dies in 30 days.",
+  "expiry": {
+    "kind": "days_from_grant",
+    "days": 30
+  },
+  "leftover": "voids",
+  "balance": {
+    "method": "console_only",
+    "where": "the Cerebras console",
+    "why_not_api": "The remaining promotional credit is shown in the console. Checked 2026-08-21.",
+    "where_url": "https://cloud.cerebras.ai"
+  },
+  "coverage": [
+    {
+      "door": "cerebras-api",
+      "models": [
+        "*"
+      ],
+      "what": "inference on the hosted models",
+      "verdict": "covered",
+      "clock": "stable",
+      "note": "$5, and only after a card is added. 30-day expiry.",
+      "verified_on": "2026-08-21",
+      "source": "https://www.cerebras.ai/pricing"
+    },
+    {
+      "door": "cerebras-api",
+      "models": [
+        "1m-tokens-per-day"
+      ],
+      "what": "the 1M tokens a day figure",
+      "verdict": "not covered",
+      "clock": "stable",
+      "note": "that number is a rate limit, not a grant. Nothing is being given to you.",
+      "verified_on": "2026-08-21",
+      "source": "https://inference-docs.cerebras.ai/support/rate-limits"
+    }
+  ],
+  "sources": [
+    "https://www.cerebras.ai/pricing",
+    "https://inference-docs.cerebras.ai/support/rate-limits"
+  ],
+  "verified_on": "2026-08-21",
+  "contributed_by": "manymoats"
+}
