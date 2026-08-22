@@ -281,7 +281,10 @@ func (a app) creditCovers(c credits.Credit, model string, cov []credits.Coverage
 			p(l)
 		}
 		p("")
-		p("           same model  ·  two doors  ·  one of them charges your card")
+		p("        same model  ·  two doors  ·  only one is on your credit")
+		p("")
+		p("  What the second door costs depends on your own billing setup — we")
+		p("  cannot see that. We only know this credit does not cover it.")
 		p("")
 	}
 
@@ -438,7 +441,7 @@ func verdictWord(v credits.Verdict) string {
 	case credits.Covered:
 		return "pays for"
 	case credits.NotCovered:
-		return "bills you"
+		return "not on this credit"
 	default:
 		return string(credits.Unknown)
 	}
@@ -448,8 +451,12 @@ const cardW = 38
 
 func (a app) twoDoors(model string, yes, no credits.Coverage) []string {
 	f := frame{width: cardW, ascii: a.m.plain}
-	left := a.card(model, yes, "PAYS FOR IT")
-	right := a.card(model, no, "BILLS YOU")
+	// "BILLS YOU" asserted a financial outcome this tool cannot know: whether a
+	// call actually charges you depends on your billing account, your project,
+	// your free-tier standing and any other credit you hold. What IS knowable is
+	// whether the credit covers the door, so that is what the cards say.
+	left := a.card(model, yes, "ON YOUR CREDIT")
+	right := a.card(model, no, "NOT ON IT")
 	for len(left) < len(right) {
 		left = append(left, "")
 	}

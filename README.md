@@ -52,8 +52,11 @@ uploaded and never ship in the binary.
 ## Update
 
 ```bash
-brew upgrade manymoats
+brew update && brew upgrade manymoats
 ```
+
+`brew upgrade` on its own reads a cached copy of the tap and will tell you the
+version you already have is the newest one. `brew update` fetches first.
 
 ## Build from source
 

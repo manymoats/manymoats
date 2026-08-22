@@ -1,110 +1,110 @@
 {
-  "schema_version": 1,
-  "id": "gcp-trial",
-  "name": "Google Cloud free trial",
-  "provider": "google-cloud",
-  "colour": "#6C7BF0",
-  "kind": "trial",
-  "unit": "usd",
-  "face_value": 300,
-  "how_you_get_it": "Create a Google Cloud account. A card is required. You are not charged unless you choose to upgrade.",
-  "trap": "The same Gemini model is sold through two web addresses. This credit pays at one of them and bills your card at the other.",
-  "expiry": {
-    "kind": "days_from_signup",
-    "days": 90
+ "schema_version": 1,
+ "id": "gcp-trial",
+ "name": "Google Cloud free trial",
+ "provider": "google-cloud",
+ "colour": "#6C7BF0",
+ "kind": "trial",
+ "unit": "usd",
+ "face_value": 300,
+ "how_you_get_it": "Create a Google Cloud account. A card is required. You are not charged unless you choose to upgrade.",
+ "trap": "The same Gemini model is sold through two web addresses. This credit pays at one of them and does not cover the other — what that one costs you depends on your own billing setup.",
+ "expiry": {
+  "kind": "days_from_signup",
+  "days": 90
+ },
+ "leftover": "voids",
+ "balance": {
+  "method": "console_only",
+  "where": "the Cloud Console billing page",
+  "why_not_api": "The Cloud Billing API reports cost and budgets. It does not expose the remaining balance of a promotional or trial credit. Checked 2026-08-21.",
+  "where_url": "https://console.cloud.google.com/billing"
+ },
+ "coverage": [
+  {
+   "door": "vertex-ai",
+   "models": [
+    "gemini-*",
+    "veo-*",
+    "imagen-*"
+   ],
+   "what": "Gemini, Veo, Imagen",
+   "verdict": "covered",
+   "clock": "stable",
+   "note": "your Google Cloud trial covers Google's own models here.",
+   "verified_on": "2026-08-21",
+   "source": "https://cloud.google.com/free/docs/free-cloud-features"
   },
-  "leftover": "voids",
-  "balance": {
-    "method": "console_only",
-    "where": "the Cloud Console billing page",
-    "why_not_api": "The Cloud Billing API reports cost and budgets. It does not expose the remaining balance of a promotional or trial credit. Checked 2026-08-21.",
-    "where_url": "https://console.cloud.google.com/billing"
+  {
+   "door": "google-ai-studio",
+   "models": [
+    "gemini-*"
+   ],
+   "what": "Gemini",
+   "verdict": "not covered",
+   "clock": "stable",
+   "note": "the trial credit is carved out of this door. Same model.",
+   "verified_on": "2026-08-21",
+   "source": "https://cloud.google.com/free/docs/free-cloud-features"
   },
-  "coverage": [
-    {
-      "door": "vertex-ai",
-      "models": [
-        "gemini-*",
-        "veo-*",
-        "imagen-*"
-      ],
-      "what": "Gemini, Veo, Imagen",
-      "verdict": "covered",
-      "clock": "stable",
-      "note": "your Google Cloud trial covers Google's own models here.",
-      "verified_on": "2026-08-21",
-      "source": "https://cloud.google.com/free/docs/free-cloud-features"
-    },
-    {
-      "door": "google-ai-studio",
-      "models": [
-        "gemini-*"
-      ],
-      "what": "Gemini",
-      "verdict": "not covered",
-      "clock": "stable",
-      "note": "the trial credit is carved out of this door. Same model.",
-      "verified_on": "2026-08-21",
-      "source": "https://cloud.google.com/free/docs/free-cloud-features"
-    },
-    {
-      "door": "vertex-partner-models",
-      "models": [
-        "claude-*",
-        "mistral-*",
-        "llama-*",
-        "jamba-*"
-      ],
-      "what": "Claude, Mistral, Llama",
-      "verdict": "not covered",
-      "clock": "stable",
-      "note": "third-party models sold on Vertex are billed by the partner.",
-      "verified_on": "2026-08-21",
-      "source": "https://cloud.google.com/free/docs/free-cloud-features"
-    },
-    {
-      "door": "google-cloud-services",
-      "models": [
-        "*"
-      ],
-      "what": "ordinary cloud services",
-      "verdict": "covered",
-      "clock": "stable",
-      "note": "the trial pays for normal Google Cloud usage on the same billing account.",
-      "verified_on": "2026-08-21",
-      "source": "https://cloud.google.com/free/docs/free-cloud-features"
-    },
-    {
-      "door": "compute-engine",
-      "what": "graphics cards on trial machines",
-      "verdict": "not covered",
-      "clock": "stable",
-      "note": "GPUs are excluded from the trial.",
-      "verified_on": "2026-08-21",
-      "source": "https://cloud.google.com/free/docs/free-cloud-features"
-    },
-    {
-      "door": "cloud-marketplace",
-      "what": "anything bought in Marketplace",
-      "verdict": "not covered",
-      "clock": "stable",
-      "note": "Marketplace purchases are billed to you directly.",
-      "verified_on": "2026-08-21",
-      "source": "https://cloud.google.com/free/docs/free-cloud-features"
-    },
-    {
-      "door": "quota-increase",
-      "what": "asking for a bigger allowance",
-      "verdict": "not covered",
-      "clock": "stable",
-      "note": "quota increases are not available on a trial account.",
-      "verified_on": "2026-08-21",
-      "source": "https://cloud.google.com/free/docs/free-cloud-features"
-    }
-  ],
-  "verified_on": "2026-08-21",
-  "sources": [
-    "https://cloud.google.com/free/docs/free-cloud-features"
-  ],
-  "contributed_by": "manymoats"
+  {
+   "door": "vertex-partner-models",
+   "models": [
+    "claude-*",
+    "mistral-*",
+    "llama-*",
+    "jamba-*"
+   ],
+   "what": "Claude, Mistral, Llama",
+   "verdict": "not covered",
+   "clock": "stable",
+   "note": "third-party models sold on Vertex are billed by the partner.",
+   "verified_on": "2026-08-21",
+   "source": "https://cloud.google.com/free/docs/free-cloud-features"
+  },
+  {
+   "door": "google-cloud-services",
+   "models": [
+    "*"
+   ],
+   "what": "ordinary cloud services",
+   "verdict": "covered",
+   "clock": "stable",
+   "note": "the trial pays for normal Google Cloud usage on the same billing account.",
+   "verified_on": "2026-08-21",
+   "source": "https://cloud.google.com/free/docs/free-cloud-features"
+  },
+  {
+   "door": "compute-engine",
+   "what": "graphics cards on trial machines",
+   "verdict": "not covered",
+   "clock": "stable",
+   "note": "GPUs are excluded from the trial.",
+   "verified_on": "2026-08-21",
+   "source": "https://cloud.google.com/free/docs/free-cloud-features"
+  },
+  {
+   "door": "cloud-marketplace",
+   "what": "anything bought in Marketplace",
+   "verdict": "not covered",
+   "clock": "stable",
+   "note": "Marketplace purchases are billed to you directly.",
+   "verified_on": "2026-08-21",
+   "source": "https://cloud.google.com/free/docs/free-cloud-features"
+  },
+  {
+   "door": "quota-increase",
+   "what": "asking for a bigger allowance",
+   "verdict": "not covered",
+   "clock": "stable",
+   "note": "quota increases are not available on a trial account.",
+   "verified_on": "2026-08-21",
+   "source": "https://cloud.google.com/free/docs/free-cloud-features"
+  }
+ ],
+ "verified_on": "2026-08-21",
+ "sources": [
+  "https://cloud.google.com/free/docs/free-cloud-features"
+ ],
+ "contributed_by": "manymoats"
 }

@@ -265,10 +265,10 @@ func TestANormalRunCarriesNoAttribution(t *testing.T) {
 func TestTheTwoDoorCardsAreDrawnAndBothSidesAreEqualWidth(t *testing.T) {
 	a := testApp(t, false, fixtureHoldings(t))
 	s := a.coversView("gemini-3.7-flash")
-	if !strings.Contains(s, "PAYS FOR IT") || !strings.Contains(s, "BILLS YOU") {
+	if !strings.Contains(s, "ON YOUR CREDIT") || !strings.Contains(s, "NOT ON IT") {
 		t.Fatal("the two-door answer was not drawn")
 	}
-	if !strings.Contains(s, "same model  ·  two doors  ·  one of them charges your card") {
+	if !strings.Contains(s, "same model  ·  two doors  ·  only one is on your credit") {
 		t.Error("the punch line is missing")
 	}
 	if !strings.Contains(s, "aiplatform.googleapis.com") || !strings.Contains(s, "generativelanguage.googleapis.com") {
@@ -360,6 +360,24 @@ func TestEveryLabelFitsItsColumn(t *testing.T) {
 	for _, d := range cat.Doors {
 		if lipgloss.Width(d.Name) > frameW-doorCol {
 			t.Logf("door %q wraps under its column (%d cells)", d.Name, lipgloss.Width(d.Name))
+		}
+	}
+}
+
+// The tool can know what a credit covers. It cannot know what a call will cost
+// you — that depends on a billing account it has never seen. Any wording that
+// asserts a charge is a claim this product cannot defend.
+func TestNoSurfaceClaimsAChargeItCannotKnow(t *testing.T) {
+	banned := []string{"charges your card", "bills you", "will be charged", "you pay", "costs you $"}
+	for _, plain := range []bool{false, true} {
+		a := testApp(t, plain, fixtureHoldings(t))
+		for name, s := range surfaces(t, a) {
+			low := strings.ToLower(s)
+			for _, b := range banned {
+				if strings.Contains(low, b) {
+					t.Errorf("%s claims %q — the billing account is not visible to us", name, b)
+				}
+			}
 		}
 	}
 }
