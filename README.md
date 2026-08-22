@@ -49,6 +49,26 @@ a published terms page lasts 180.
 Your own figures live in `~/.manymoats/credits/holdings.json`. They are never
 uploaded and never ship in the binary.
 
+### `manymoats eyes`
+
+Does this screen say what it measures?
+
+```bash
+manymoats eyes --frames 8 manymoats orch --snapshot marks
+```
+
+It runs a command, measures what it printed, and compares the two. Widths in
+display cells **and** bytes, because a box-drawing glyph is three bytes and one
+column and reporting the wrong one has already caused a wrong verdict here.
+Motion by capturing frames of a frozen subject, so a moving digit is animation
+rather than new data.
+
+Exit 1 when something disagrees, so it works in a hook.
+
+It has three verdicts, not two: `agrees`, `disagrees`, and **`not measured`** —
+listed separately and never counted as a pass. An unmeasured dimension read as a
+pass is the failure the tool was built to stop.
+
 ## Update
 
 ```bash
