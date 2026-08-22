@@ -162,7 +162,7 @@ func (m model) instrument() string {
 			if live(a) && a.TokensMin > 0 {
 				r = pad(rate(a.TokensMin)+"/m", rateCells)
 			} else if a.CPUPct > 0 {
-				r = pad(fmt.Sprintf("%5.1f%% cpu", a.CPUPct), rateCells)
+				r = pad(cores(a.CPUPct), rateCells)
 			}
 			pot := a.Pot
 			if pot == "" {
@@ -393,7 +393,7 @@ func (m model) hostBars() string {
 			b.WriteString("  " + dim.Render(fmt.Sprintf("%-*s unreachable", w, st.Name)) + "\n")
 			continue
 		}
-		line := fmt.Sprintf("  %-*s cpu %s %3.0f%%   gpu %s %3.0f%%",
+		line := fmt.Sprintf("  %-*s all cores %s %3.0f%%   gpu %s %3.0f%%",
 			w, st.Name, hostBar(st.CPUPct, 8), st.CPUPct, hostBar(st.GPUPct, 8), st.GPUPct)
 		b.WriteString(silver.Render(line) + "\n")
 	}

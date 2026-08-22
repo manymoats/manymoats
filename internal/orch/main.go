@@ -224,7 +224,7 @@ func Reading(a agent.Agent) (bar, value string) {
 	case a.TokensMin > 0:
 		return meterFor(a), fmt.Sprintf("%s/m", trimRate(a.TokensMin))
 	case a.CPUPct > 0:
-		return meterFor(a), fmt.Sprintf("%.1f%% cpu", a.CPUPct)
+		return meterFor(a), cores(a.CPUPct)
 	case a.LinesTouched > 0:
 		return meterFromLines(a), fmt.Sprintf("%s lines", compact(a.LinesTouched))
 	case a.VRAMBytes > 0:
@@ -232,6 +232,17 @@ func Reading(a agent.Agent) (bar, value string) {
 	default:
 		return dim.Render(strings.Repeat("·", meterCells)), ""
 	}
+}
+
+// cores says what the number actually measures. `ps %cpu` is a share of ONE
+// core, so a busy agent routinely reads 300%; the machine rows below it report
+// a share of the WHOLE machine. Both said "cpu", ten times apart, and neither
+// said which — so the board had two different units under one word.
+func cores(pct float64) string {
+	if pct >= 100 {
+		return fmt.Sprintf("%.1f cores", pct/100)
+	}
+	return fmt.Sprintf("%.0f%% core", pct)
 }
 
 func compact(n int) string {
