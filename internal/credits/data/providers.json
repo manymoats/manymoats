@@ -1,0 +1,209 @@
+[
+ {
+  "id": "gcp-trial",
+  "name": "Google Cloud free trial",
+  "provider": "google",
+  "colour": "#6C7BF0",
+  "leftover": "voids",
+  "coverage": [
+   {
+    "door": "vertex-ai",
+    "verdict": "covered",
+    "note": "Gemini, Veo and Imagen through Vertex",
+    "verified_on": "2026-08-21",
+    "source": "https://cloud.google.com/free"
+   },
+   {
+    "door": "google-ai-studio",
+    "verdict": "not covered",
+    "note": "the SAME Gemini models billed separately — this is the trap",
+    "verified_on": "2026-08-21",
+    "source": "https://docs.cloud.google.com/free/docs/free-cloud-features"
+   },
+   {
+    "door": "vertex-partner-models",
+    "verdict": "not covered",
+    "note": "third-party models sold as managed API (Claude, Mistral on Vertex)",
+    "verified_on": "2026-08-21"
+   },
+   {
+    "door": "gpu-on-trial-vm",
+    "verdict": "not covered",
+    "verified_on": "2026-08-21",
+    "clock": "stable",
+    "note": "GPUs are excluded from the free trial — quota is 0 until the account is upgraded",
+    "source": "https://cloud.google.com/free/docs/free-cloud-features#free-trial"
+   },
+   {
+    "door": "cloud-marketplace",
+    "verdict": "not covered",
+    "verified_on": "2026-08-21",
+    "clock": "stable",
+    "note": "third-party Marketplace charges are not payable with trial credit",
+    "source": "https://cloud.google.com/free/docs/free-cloud-features#free-trial"
+   },
+   {
+    "door": "quota-increase",
+    "verdict": "not covered",
+    "verified_on": "2026-08-21",
+    "clock": "stable",
+    "note": "quota increase requests are refused while the account is on trial",
+    "source": "https://cloud.google.com/free/docs/free-cloud-features#free-trial"
+   }
+  ]
+ },
+ {
+  "id": "moonshot",
+  "name": "Moonshot",
+  "provider": "moonshot",
+  "colour": "#E8E3D9",
+  "coverage": [
+   {
+    "door": "kimi-k2.6",
+    "verdict": "covered",
+    "verified_on": "2026-08-21"
+   },
+   {
+    "door": "kimi-k2.7-code",
+    "verdict": "covered",
+    "verified_on": "2026-08-21"
+   },
+   {
+    "door": "kimi-k3",
+    "verdict": "covered",
+    "note": "direct lane only",
+    "verified_on": "2026-08-21"
+   }
+  ]
+ },
+ {
+  "id": "ollama-cloud",
+  "name": "Ollama Cloud",
+  "provider": "ollama",
+  "colour": "#5FD0C0",
+  "coverage": [
+   {
+    "door": "glm-5.2",
+    "verdict": "covered",
+    "verified_on": "2026-08-21"
+   },
+   {
+    "door": "deepseek-v4-pro",
+    "verdict": "covered",
+    "verified_on": "2026-08-21"
+   },
+   {
+    "door": "kimi-k3",
+    "verdict": "covered",
+    "note": "unblocked 2026-08-21 — the Aug 15 402 was stale",
+    "verified_on": "2026-08-21"
+   }
+  ]
+ },
+ {
+  "id": "modal",
+  "name": "Modal",
+  "provider": "modal",
+  "colour": "#7C6AEF",
+  "leftover": "voids",
+  "coverage": [
+   {
+    "door": "gpu-t4",
+    "verdict": "covered",
+    "note": "$30/mo grant",
+    "verified_on": "2026-08-21"
+   },
+   {
+    "door": "gpu-a100",
+    "verdict": "covered",
+    "verified_on": "2026-08-21"
+   }
+  ]
+ },
+ {
+  "id": "assemblyai",
+  "name": "AssemblyAI",
+  "provider": "assemblyai",
+  "colour": "#5FD0C0",
+  "leftover": "none",
+  "coverage": [
+   {
+    "door": "speech-to-text",
+    "verdict": "covered",
+    "note": "$50, no card, credits do NOT expire — maker-stated",
+    "verified_on": "2026-08-21",
+    "source": "https://www.assemblyai.com/docs/billing-and-pricing",
+    "clock": "stable"
+   },
+   {
+    "door": "streaming-stt",
+    "verdict": "covered",
+    "note": "billed on socket-open time INCLUDING idle — a zombie session bills",
+    "verified_on": "2026-08-21",
+    "clock": "stable"
+   }
+  ]
+ },
+ {
+  "id": "cerebras",
+  "name": "Cerebras",
+  "provider": "cerebras",
+  "colour": "#F55036",
+  "leftover": "voids",
+  "coverage": [
+   {
+    "door": "inference",
+    "verdict": "covered",
+    "note": "$5 AFTER adding a card, 30-day expiry",
+    "verified_on": "2026-08-21",
+    "clock": "stable"
+   },
+   {
+    "door": "1m-tokens-per-day",
+    "verdict": "not covered",
+    "note": "1M TPD is a RATE LIMIT, not a free grant — aggregators re-render it as one",
+    "verified_on": "2026-08-21",
+    "clock": "stable"
+   }
+  ]
+ },
+ {
+  "id": "elevenlabs",
+  "name": "ElevenLabs",
+  "provider": "elevenlabs",
+  "colour": "#CBB9F2",
+  "leftover": "voids",
+  "coverage": [
+   {
+    "door": "tts-free",
+    "verdict": "covered",
+    "note": "10k credits/month — credits, not raw characters",
+    "verified_on": "2026-08-21",
+    "source": "https://elevenlabs.io/pricing",
+    "clock": "stable"
+   },
+   {
+    "door": "commercial-use",
+    "verdict": "not covered",
+    "note": "commercial licence starts at Starter, not Free",
+    "verified_on": "2026-08-21",
+    "clock": "stable"
+   }
+  ]
+ },
+ {
+  "id": "jina",
+  "name": "Jina",
+  "provider": "jina",
+  "colour": "#4A9EFF",
+  "coverage": [
+   {
+    "door": "embeddings",
+    "verdict": "covered",
+    "note": "new keys get free tokens — quantity UNVERIFIED, the 10M figure is secondary-tracker",
+    "verified_on": "2026-08-21",
+    "source": "https://jina.ai/embeddings/"
+   }
+  ]
+ }
+]

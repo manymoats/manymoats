@@ -1,0 +1,622 @@
+package orch
+
+import (
+	"encoding/json"
+	"fmt"
+	"math"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/manymoats/manymoats/internal/agent"
+	"github.com/manymoats/manymoats/internal/collect"
+	"github.com/manymoats/manymoats/internal/conf"
+	"github.com/manymoats/manymoats/internal/host"
+	"github.com/muesli/termenv"
+)
+
+type tickMsg time.Time
+
+type view int
+
+const (
+	viewAnim view = iota
+	viewSplash
+	viewMarks
+	viewInstrument
+	viewWaveform
+	viewCards
+	viewMinimal
+)
+
+func (v view) String() string {
+	return [...]string{"anim", "splash", "marks", "instrument", "waveform", "cards", "minimal"}[v]
+}
+
+type model struct {
+	view        view
+	names       agent.NameMode
+	animLong    bool
+	animElapsed int
+	gotData     bool
+	showAll     bool
+	showHost    bool
+	hosts       []host.Stats
+	agents      []agent.Agent
+	frame       int
+	w, h        int
+	err         error
+}
+
+// Two clocks on purpose. Data refreshes once a second because reading session
+// files and running ps more often is waste. Motion runs at 120ms because that is
+// what reads as alive. Collapsing them made the board static.
+func tick() tea.Cmd {
+	return tea.Tick(time.Second, func(t time.Time) tea.Msg { return tickMsg(t) })
+}
+
+type pulseMsg time.Time
+
+const pulseMS = 120
+
+func pulse() tea.Cmd {
+	return tea.Tick(pulseMS*time.Millisecond, func(t time.Time) tea.Msg { return pulseMsg(t) })
+}
+
+func probeAmbiguousWide() bool {
+	for _, k := range []string{"ORCH_AMBIGUOUS_WIDE", "RUNEWIDTH_EASTASIAN"} {
+		switch os.Getenv(k) {
+		case "1", "true":
+			return true
+		case "0", "false":
+			return false
+		}
+	}
+	lang := os.Getenv("LC_ALL") + os.Getenv("LC_CTYPE") + os.Getenv("LANG")
+	for _, cjk := range []string{"zh", "ja", "ko", "CN", "JP", "KR", "TW"} {
+		if strings.Contains(lang, cjk) {
+			return true
+		}
+	}
+	return false
+}
+
+func (m model) Init() tea.Cmd {
+	agent.SetAmbiguousWide(probeAmbiguousWide())
+	cmds := []tea.Cmd{tick(), pulse(), refresh}
+	if m.view == viewAnim {
+		cmds = append(cmds, animTick())
+	}
+	return tea.Batch(cmds...)
+}
+
+type hostMsg struct{ stats []host.Stats }
+
+func hostRefresh() tea.Msg {
+	c := conf.Load()
+	out := make([]host.Stats, 0, len(c.Machines))
+	for _, m := range c.Machines {
+		if m.Host == "local" || m.Host == "" {
+			out = append(out, host.Local(m.Name))
+			continue
+		}
+		out = append(out, host.Remote(m.Host, m.Name))
+	}
+	return hostMsg{stats: out}
+}
+
+func refresh() tea.Msg {
+	home, _ := os.UserHomeDir()
+	as, err := collect.ClaudeSessions(filepath.Join(home, ".claude", "projects"), nil)
+	if err != nil {
+		return err
+	}
+	as = append(as, collect.Cursor()...)
+	as = append(as, collect.Processes()...)
+	as = append(as, collect.Ollama()...)
+	as = agent.RollUpSubagents(as)
+	as = agent.Settle(as, time.Now())
+	for i := range as {
+		as[i].Pot, as[i].Free = agent.Paying(as[i].Source, as[i].Model, "")
+	}
+	agent.Disambiguate(as)
+	return as
+}
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch v := msg.(type) {
+	case tea.KeyMsg:
+		if m.view == viewAnim {
+			s := v.String()
+			if s == "ctrl+c" {
+				return m, tea.Quit
+			}
+			if m.animLong {
+				markSeen()
+			}
+			m.view = viewMarks
+			return m, nil
+		}
+		switch s := v.String(); s {
+		case "q", "ctrl+c", "esc":
+			return m, tea.Quit
+		case "1":
+			m.view = viewMarks
+		case "2":
+			m.view = viewInstrument
+		case "3":
+			m.view = viewWaveform
+		case "4":
+			m.view = viewCards
+		case "m":
+			if m.view == viewMinimal {
+				m.view = viewMarks
+			} else {
+				m.view = viewMinimal
+			}
+		case "tab":
+			m.view = viewMarks + (m.view+1)%5
+		case "enter":
+			if m.view == viewSplash {
+				m.view = viewMarks
+			}
+		case "n":
+			m.names = (m.names + 1) % 3
+		case "a":
+			m.showAll = !m.showAll
+		case "h":
+			m.showHost = !m.showHost
+			if m.showHost {
+				return m, hostRefresh
+			}
+		}
+	case tea.WindowSizeMsg:
+		m.w, m.h = v.Width, v.Height
+		agent.SetAmbiguousWide(probeAmbiguousWide())
+	case []agent.Agent:
+		m.agents = v
+		m.gotData = true
+		// The picture yields to the data. If the short cut is still running when
+		// real state arrives, finish the sweep where it is and show the board.
+		if m.view == viewAnim && !m.animLong && m.animElapsed >= 450 {
+			m.view = viewMarks
+		}
+	case hostMsg:
+		m.hosts = v.stats
+	case error:
+		m.err = v
+	case animFrame:
+		if m.view != viewAnim {
+			return m, nil
+		}
+		m.animElapsed += frameMS
+		m.frame++
+		if m.animDone() {
+			if m.animLong {
+				markSeen()
+			}
+			m.view = viewMarks
+			return m, nil
+		}
+		return m, animTick()
+	case pulseMsg:
+		m.frame++
+		return m, pulse()
+	case tickMsg:
+		return m, tea.Batch(tick(), refresh)
+	}
+	return m, nil
+}
+
+var dim = lipgloss.NewStyle().Foreground(lipgloss.Color("#4c5865"))
+
+const meterCells = 7
+
+// Reading returns the bar AND the number that produced it. Two agents can be
+// measured in different units — Claude reports tokens/min, Cursor exposes only a
+// CPU share, a resident model reports neither — so a bare bar invites a
+// comparison that does not exist. The number is the truth; the bar is a glance.
+func Reading(a agent.Agent) (bar, value string) {
+	switch {
+	case a.TokensMin > 0:
+		return meterFor(a), fmt.Sprintf("%s/m", trimRate(a.TokensMin))
+	case a.CPUPct > 0:
+		return meterFor(a), fmt.Sprintf("%.1f%% cpu", a.CPUPct)
+	case a.LinesTouched > 0:
+		return meterFromLines(a), fmt.Sprintf("%s lines", compact(a.LinesTouched))
+	case a.VRAMBytes > 0:
+		return dim.Render(strings.Repeat("·", meterCells)), fmt.Sprintf("%.1fGB", float64(a.VRAMBytes)/1e9)
+	default:
+		return dim.Render(strings.Repeat("·", meterCells)), ""
+	}
+}
+
+func compact(n int) string {
+	if n >= 1000 {
+		return fmt.Sprintf("%.1fk", float64(n)/1000)
+	}
+	return fmt.Sprintf("%d", n)
+}
+
+func meterFromLines(a agent.Agent) string {
+	if !live(a) {
+		return dim.Render(strings.Repeat("·", meterCells))
+	}
+	f := int(math.Round(math.Log10(float64(a.LinesTouched)+1) / math.Log10(50000) * meterCells))
+	if f < 1 {
+		f = 1
+	}
+	if f > meterCells {
+		f = meterCells
+	}
+	return strings.Repeat("▓", f) + strings.Repeat("░", meterCells-f)
+}
+
+func trimRate(t float64) string {
+	if t >= 1000 {
+		return fmt.Sprintf("%.1fk", t/1000)
+	}
+	return fmt.Sprintf("%.0f", t)
+}
+
+func meterFor(a agent.Agent) string {
+	if a.TokensMin > 0 {
+		return meter(a.TokensMin, live(a))
+	}
+	if a.CPUPct > 0 {
+		// full scale is a whole core. Scaling to a third pinned the bar at 100%
+		// for anything above 33%, so a 74%% reading drew as full.
+		f := int(math.Round(a.CPUPct / 100 * meterCells))
+		if f < 1 {
+			f = 1
+		}
+		if f > meterCells {
+			f = meterCells
+		}
+		return strings.Repeat("▓", f) + strings.Repeat("░", meterCells-f)
+	}
+	return dim.Render(strings.Repeat("·", meterCells))
+}
+
+// breathe animates ONLY the frontier — the single cell where filled meets empty.
+// The level itself never moves, because the level is data. The frontier moving
+// is affordance: it says "this is running", which is true, and it says nothing
+// about the number, which would be a lie.
+func breathe(bar string, frame int, active bool) string {
+	if !active {
+		return bar
+	}
+	r := []rune(bar)
+	edge := -1
+	for i, c := range r {
+		if c == '░' {
+			edge = i
+			break
+		}
+	}
+	if edge < 0 {
+		edge = len(r) - 1
+	}
+	switch (frame / 3) % 4 {
+	case 0:
+		r[edge] = '░'
+	case 1, 3:
+		r[edge] = '▒'
+	case 2:
+		r[edge] = '▓'
+	}
+	return string(r)
+}
+
+func meter(tokensPerMin float64, active bool) string {
+	if !active || tokensPerMin <= 0 {
+		return dim.Render(strings.Repeat("░", meterCells))
+	}
+	filled := int(math.Round(math.Log10(tokensPerMin+1) / math.Log10(50000) * meterCells))
+	if filled < 1 {
+		filled = 1
+	}
+	if filled > meterCells {
+		filled = meterCells
+	}
+	return strings.Repeat("▓", filled) + strings.Repeat("░", meterCells-filled)
+}
+
+func (m model) View() string {
+	if m.err != nil {
+		return "\n  " + lipgloss.NewStyle().Bold(true).Render("orch · error") + "\n  " +
+			dim.Render(m.err.Error()) + "\n\n  " + dim.Render("q quit") + "\n"
+	}
+	switch m.view {
+	case viewAnim:
+		return m.animView()
+	case viewSplash:
+		return m.splash()
+	case viewInstrument:
+		return m.instrument()
+	case viewWaveform:
+		return m.waveform()
+	case viewCards:
+		return m.cards()
+	case viewMinimal:
+		return m.minimal()
+	}
+	return m.marks()
+}
+
+// marks lays agents ACROSS the screen, not down it. When everything is in one
+// project nothing is labelled — repeating the same folder on every row is noise.
+// With several projects the agents group under a coloured folder, so a glance at
+// the colour tells you where without reading a word.
+func (m model) marks() string {
+	var b strings.Builder
+	b.WriteString(m.header("ORCH"))
+	vis := m.visible()
+	single := agent.SingleProject(vis)
+	order, byProject := agent.GroupByProject(vis)
+
+	b.WriteString(m.markRows(vis, !single))
+	// the key: colour → project, printed once, only when there is more than one
+	if !single {
+		var legend []string
+		for _, proj := range order {
+			ph := lipgloss.NewStyle().Foreground(lipgloss.Color(agent.ProjectHue(proj)))
+			legend = append(legend, ph.Render(agent.FolderMark)+" "+dim.Render(agent.ShortProject(proj, 18)))
+		}
+		b.WriteString("  " + strings.Join(legend, "   ") + "\n\n")
+	} else if len(order) == 1 && order[0] != agent.UnknownProject {
+		ph := lipgloss.NewStyle().Foreground(lipgloss.Color(agent.ProjectHue(order[0])))
+		b.WriteString("  " + ph.Render(agent.FolderMark) + " " + dim.Render(agent.ShortProject(order[0], 22)) + "\n\n")
+	}
+	_ = byProject
+	if m.showHost {
+		b.WriteString(m.hostBars())
+	}
+	b.WriteString(m.footer())
+	return b.String()
+}
+
+func (m model) markRows(as []agent.Agent, showFolders bool) string {
+	var b strings.Builder
+	const cw = 13
+	lead := "  "
+	perRow := 5
+	if m.w > 0 {
+		perRow = (m.w - len(lead) - 2) / cw
+	}
+	if perRow < 1 {
+		perRow = 1
+	}
+	for start := 0; start < len(as); start += perRow {
+		end := start + perRow
+		if end > len(as) {
+			end = len(as)
+		}
+		var l1, lf, l2, l3, l4 strings.Builder
+		for _, a := range as[start:end] {
+			c := hue(a)
+			if !live(a) {
+				c = c.Faint(true)
+			}
+			_, mid, _ := agent.MarkFor(a.Source).Render()
+			l1.WriteString("  " + pad(c.Bold(true).Render(mid), cw-2))
+			if showFolders {
+				ph := lipgloss.NewStyle().Foreground(lipgloss.Color(agent.ProjectHue(a.Project)))
+				lf.WriteString("  " + pad(ph.Render(agent.FolderMark), cw-2))
+			}
+			l2.WriteString("  " + pad(c.Bold(live(a)).Render(agent.Shorten(labelFor(a, m.names), cw-3)), cw-2))
+			if a.State == agent.Asks {
+				l3.WriteString("  " + pad(inverted(a, "needs you"), cw-2))
+				l4.WriteString("  " + pad(dim.Render(short(a.Since)), cw-2))
+			} else {
+				bar, val := Reading(a)
+				bar = breathe(bar, m.frame, live(a))
+				l3.WriteString("  " + pad(c.Render(bar), cw-2))
+				l4.WriteString("  " + pad(dim.Render(val), cw-2))
+			}
+		}
+		rows := []*strings.Builder{&l1}
+		if showFolders {
+			rows = append(rows, &lf)
+		}
+		rows = append(rows, &l2, &l3, &l4)
+		for _, l := range rows {
+			b.WriteString(lead + strings.TrimRight(l.String(), " ") + "\n")
+		}
+		b.WriteString("\n")
+	}
+	return b.String()
+}
+
+func short(d time.Duration) string {
+	switch {
+	case d < time.Minute:
+		return fmt.Sprintf("%.0fs", d.Seconds())
+	case d < time.Hour:
+		return fmt.Sprintf("%.0fm", d.Minutes())
+	default:
+		return fmt.Sprintf("%.0fh", d.Hours())
+	}
+}
+
+func namesFromEnv() agent.NameMode {
+	switch os.Getenv("ORCH_NAMES") {
+	case "brand", "1":
+		return agent.NameBrand
+	case "both", "2":
+		return agent.NameBoth
+	default:
+		return agent.NameModel
+	}
+}
+
+// animFrames prints the long cut as still frames so it can be reviewed without a
+// terminal — the same reason --snapshot exists.
+func animFrames(long bool, n int) int {
+	total := shortMS
+	if long {
+		total = longMS
+	}
+	m := model{w: 80, h: 40, view: viewAnim, animLong: long, names: namesFromEnv()}
+	switch v := refresh().(type) {
+	case []agent.Agent:
+		m.agents = v
+	}
+	for i := 0; i <= n; i++ {
+		m.animElapsed = total * i / n
+		m.frame = i
+		fmt.Printf("\n── %4dms ─────────────────────────────────────\n%s", m.animElapsed, m.animView())
+	}
+	return 0
+}
+
+var plainGlyph = map[string]string{"claude": "✶", "openai": "⊛", "cursor": "◧", "gemini": "◆", "qwen": "◪", "grok": "⊗", "ollama": "◉", "openrouter": "◈", "deepseek": "⊙", "moonshot": "○", "copilot": "●", "terminal": "❯"}
+
+// printIcons exists because the desk cannot see whether a Nerd Font renders on
+// your machine — only you can. This shows both sets side by side so the choice
+// is made by looking, not by guessing.
+func setIcons(on bool) int {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "orch:", err)
+		return 1
+	}
+	p := filepath.Join(home, ".orch", "config.json")
+	_ = os.MkdirAll(filepath.Dir(p), 0o700)
+	c := map[string]any{}
+	if b, err := os.ReadFile(p); err == nil {
+		_ = json.Unmarshal(b, &c)
+	}
+	c["icons"] = map[bool]string{true: "nerd", false: "unicode"}[on]
+	b, _ := json.MarshalIndent(c, "", "  ")
+	if err := os.WriteFile(p, append(b, '\n'), 0o600); err != nil {
+		fmt.Fprintln(os.Stderr, "orch:", err)
+		return 1
+	}
+	fmt.Printf("  icons: %s\n", c["icons"])
+	return 0
+}
+
+func printIcons() {
+	fmt.Printf("\n  Nerd Font file installed: %v\n", agent.NerdFontInstalled())
+	fmt.Printf("  Icons currently: %s\n", map[bool]string{true: "nerd", false: "plain"}[agent.UseNerd()])
+	fmt.Println("\n  nerd   plain   provider")
+	fmt.Println("  ─────────────────────────")
+	os.Setenv("ORCH_ICONS", "nerd")
+	nerd := map[string]string{}
+	for _, m := range agent.AllMarks() {
+		nerd[m.ID] = m.Glyph
+	}
+	for _, id := range []string{"claude", "openai", "cursor", "gemini", "qwen", "grok",
+		"ollama", "openrouter", "deepseek", "moonshot", "copilot", "terminal"} {
+		fmt.Printf("    %s      %s     %s\n", nerd[id], plainGlyph[id], id)
+	}
+	fmt.Println()
+	if agent.NerdFontInstalled() {
+		fmt.Println("  Blank or boxed nerd column? The font is installed but your")
+		fmt.Println("  terminal is not using it. Terminals built on xterm.js (Cursor,")
+		fmt.Println("  VS Code) do not inherit macOS font fallback — you must name it.")
+		fmt.Println()
+		fmt.Println("  In Cursor: Settings → search \"terminal font family\" → set")
+		fmt.Println("    Menlo, \"Symbols Nerd Font Mono\", monospace")
+		fmt.Println()
+		fmt.Println("  Then:  ORCH_ICONS=nerd orch")
+	}
+	fmt.Println()
+}
+
+func snapshot(v view) int {
+	m := model{w: 80, h: 40, view: v, names: namesFromEnv(), showHost: os.Getenv("ORCH_HOST") != ""}
+	agent.SetAmbiguousWide(probeAmbiguousWide())
+	switch v := refresh().(type) {
+	case []agent.Agent:
+		m.agents = v
+		m.gotData = true
+		// The picture yields to the data. If the short cut is still running when
+		// real state arrives, finish the sweep where it is and show the board.
+		if m.view == viewAnim && !m.animLong && m.animElapsed >= 450 {
+			m.view = viewMarks
+		}
+	case error:
+		fmt.Fprintln(os.Stderr, "orch:", v)
+		return 1
+	}
+	if m.showHost {
+		if h, ok := hostRefresh().(hostMsg); ok {
+			m.hosts = h.stats
+		}
+	}
+	fmt.Print(m.View())
+	return 0
+}
+
+// Main runs the orch board. It returns an exit code rather than calling
+// os.Exit so the manymoats dispatcher owns process teardown.
+func Main() int {
+	// lipgloss guesses the colour profile from the environment and gets it wrong
+	// on some terminals — a board with no colour is a board with no identity, so
+	// force TrueColor unless the user has explicitly asked for none.
+	if os.Getenv("NO_COLOR") == "" && os.Getenv("ORCH_NO_COLOR") == "" {
+		lipgloss.SetColorProfile(termenv.TrueColor)
+	}
+
+	args := os.Args[1:]
+	for i, a := range args {
+		if a == "setup" || a == "--setup" {
+			return setup()
+		}
+		if a == "--icons-on" || a == "--icons-off" {
+			return setIcons(a == "--icons-on")
+		}
+		if a == "--icons" {
+			printIcons()
+			return 0
+		}
+		if a == "--anim-frames" {
+			long := true
+			n := 8
+			if i+1 < len(args) && args[i+1] == "short" {
+				long = false
+			}
+			return animFrames(long, n)
+		}
+		if a == "--snapshot" || a == "-s" {
+			v := viewMarks
+			if i+1 < len(args) {
+				switch args[i+1] {
+				case "instrument":
+					v = viewInstrument
+				case "waveform":
+					v = viewWaveform
+				case "cards":
+					v = viewCards
+				case "minimal":
+					v = viewMinimal
+				case "splash":
+					v = viewSplash
+				case "anim":
+					v = viewAnim
+				}
+			}
+			return snapshot(v)
+		}
+	}
+	start := model{names: namesFromEnv()}
+	if motionOK() {
+		start.view = viewAnim
+		start.animLong = firstRun()
+	} else {
+		// A run nobody watched must NOT consume the first-run animation. Marking it
+		// here burned the once-ever cut on every piped/snapshot invocation.
+		start.view = viewMarks
+	}
+	p := tea.NewProgram(start)
+	if _, err := p.Run(); err != nil {
+		fmt.Println("orch:", err)
+		return 1
+	}
+	return 0
+}

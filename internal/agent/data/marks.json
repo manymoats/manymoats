@@ -1,0 +1,448 @@
+[
+ {
+  "id": "claude",
+  "label": "claude",
+  "glyph": "✶",
+  "ascii": "*",
+  "colour": "#D97757",
+  "top": "╲│╱",
+  "mid": "─✶─",
+  "bot": "╱│╲",
+  "match": [
+   "claude",
+   "anthropic",
+   "opus",
+   "sonnet",
+   "haiku",
+   "fable"
+  ]
+ },
+ {
+  "id": "openai",
+  "label": "openai",
+  "glyph": "⊛",
+  "ascii": "(*)",
+  "colour": "#10A37F",
+  "top": "╲│╱",
+  "mid": "─⊛─",
+  "bot": "╱│╲",
+  "match": [
+   "openai",
+   "gpt",
+   "o1",
+   "o3",
+   "codex",
+   "chatgpt"
+  ]
+ },
+ {
+  "id": "cursor",
+  "label": "cursor",
+  "glyph": "◧",
+  "ascii": "[]",
+  "colour": "#C9D1D9",
+  "top": "╔═╗",
+  "mid": "│◧│",
+  "bot": "╚═╝",
+  "match": [
+   "cursor",
+   "composer"
+  ]
+ },
+ {
+  "id": "gemini",
+  "label": "gemini",
+  "glyph": "◆",
+  "ascii": "+",
+  "colour": "#6C7BF0",
+  "top": "╲│╱",
+  "mid": "│◆│",
+  "bot": "╱│╲",
+  "match": [
+   "gemini",
+   "vertex",
+   "bard",
+   "google"
+  ]
+ },
+ {
+  "id": "qwen",
+  "label": "qwen",
+  "glyph": "◪",
+  "ascii": "<>",
+  "colour": "#A472F0",
+  "top": "╱─╲",
+  "mid": "│◪│",
+  "bot": "╲─╱",
+  "match": [
+   "qwen",
+   "tongyi",
+   "dashscope",
+   "modelstudio",
+   "alibaba"
+  ]
+ },
+ {
+  "id": "grok",
+  "label": "grok",
+  "glyph": "⊗",
+  "ascii": "x",
+  "colour": "#8FCB3F",
+  "top": "╲ ╱",
+  "mid": "─⊗─",
+  "bot": "╱ ╲",
+  "match": [
+   "grok",
+   "xai"
+  ]
+ },
+ {
+  "id": "ollama",
+  "label": "ollama",
+  "glyph": "◉",
+  "ascii": "(o)",
+  "colour": "#5FD0C0",
+  "top": "╭─╮",
+  "mid": "│◉│",
+  "bot": "╰─╯",
+  "match": [
+   "ollama"
+  ]
+ },
+ {
+  "id": "openrouter",
+  "label": "openrouter",
+  "glyph": "◈",
+  "ascii": "<o>",
+  "colour": "#7C6AEF",
+  "top": "╱◇╲",
+  "mid": "│◈│",
+  "bot": "╲◇╱",
+  "match": [
+   "openrouter",
+   "or/"
+  ]
+ },
+ {
+  "id": "deepseek",
+  "label": "deepseek",
+  "glyph": "⊙",
+  "ascii": "(D",
+  "colour": "#4D6BFE",
+  "top": "╭─╮",
+  "mid": "│⊙│",
+  "bot": "╰─╯",
+  "match": [
+   "deepseek"
+  ]
+ },
+ {
+  "id": "moonshot",
+  "label": "moonshot",
+  "glyph": "○",
+  "ascii": "(K",
+  "colour": "#8B7FD4",
+  "top": "╭─╮",
+  "mid": "│○│",
+  "bot": "╰─╯",
+  "match": [
+   "moonshot",
+   "kimi"
+  ]
+ },
+ {
+  "id": "mistral",
+  "label": "mistral",
+  "glyph": "▲",
+  "ascii": "/\\",
+  "colour": "#FF7000",
+  "top": " ▲ ",
+  "mid": "▲▲▲",
+  "bot": "▲▲▲",
+  "match": [
+   "mistral",
+   "mixtral",
+   "codestral"
+  ]
+ },
+ {
+  "id": "meta",
+  "label": "meta",
+  "glyph": "◎",
+  "ascii": "(O)",
+  "colour": "#0668E1",
+  "top": "╭─╮",
+  "mid": "│◎│",
+  "bot": "╰─╯",
+  "match": [
+   "llama",
+   "meta/",
+   "muse-spark"
+  ]
+ },
+ {
+  "id": "groq",
+  "label": "groq",
+  "glyph": "⟡",
+  "ascii": "<>",
+  "colour": "#F55036",
+  "top": "╱─╲",
+  "mid": "│⟡│",
+  "bot": "╲─╱",
+  "match": [
+   "groq"
+  ]
+ },
+ {
+  "id": "copilot",
+  "label": "copilot",
+  "glyph": "●",
+  "ascii": "(+)",
+  "colour": "#8B949E",
+  "top": "╭─╮",
+  "mid": "│●│",
+  "bot": "╰─╯",
+  "match": [
+   "copilot",
+   "github"
+  ]
+ },
+ {
+  "id": "perplexity",
+  "label": "perplexity",
+  "glyph": "✧",
+  "ascii": "*.",
+  "colour": "#20808D",
+  "top": "╲│╱",
+  "mid": "─✧─",
+  "bot": "╱│╲",
+  "match": [
+   "perplexity",
+   "sonar"
+  ]
+ },
+ {
+  "id": "nvidia",
+  "label": "nvidia",
+  "glyph": "▽",
+  "ascii": "\\/",
+  "colour": "#76B900",
+  "top": "▽▽▽",
+  "mid": "─▽─",
+  "bot": " ▽ ",
+  "match": [
+   "nvidia",
+   "nemotron"
+  ]
+ },
+ {
+  "id": "huggingface",
+  "label": "hugging face",
+  "glyph": "◕",
+  "ascii": "(:",
+  "colour": "#FFD21E",
+  "top": "╭─╮",
+  "mid": "│◕│",
+  "bot": "╰─╯",
+  "match": [
+   "huggingface",
+   "hf/"
+  ]
+ },
+ {
+  "id": "cohere",
+  "label": "cohere",
+  "glyph": "◍",
+  "ascii": "(#)",
+  "colour": "#39594D",
+  "top": "╭─╮",
+  "mid": "│◍│",
+  "bot": "╰─╯",
+  "match": [
+   "cohere",
+   "command-r"
+  ]
+ },
+ {
+  "id": "together",
+  "label": "together",
+  "glyph": "◫",
+  "ascii": "[|]",
+  "colour": "#0F6FFF",
+  "top": "┌─┐",
+  "mid": "│◫│",
+  "bot": "└─┘",
+  "match": [
+   "together"
+  ]
+ },
+ {
+  "id": "replicate",
+  "label": "replicate",
+  "glyph": "▤",
+  "ascii": "[=]",
+  "colour": "#B4B4B4",
+  "top": "┌─┐",
+  "mid": "│▤│",
+  "bot": "└─┘",
+  "match": [
+   "replicate"
+  ]
+ },
+ {
+  "id": "fal",
+  "label": "fal",
+  "glyph": "◮",
+  "ascii": "/_\\",
+  "colour": "#C084FC",
+  "top": "╱─╲",
+  "mid": "│◮│",
+  "bot": "╲─╱",
+  "match": [
+   "fal.ai",
+   "fal/",
+   "flux"
+  ]
+ },
+ {
+  "id": "deepgram",
+  "label": "deepgram",
+  "glyph": "◊",
+  "ascii": "<>",
+  "colour": "#13EF93",
+  "top": "╱◊╲",
+  "mid": "│◊│",
+  "bot": "╲◊╱",
+  "match": [
+   "deepgram",
+   "nova-"
+  ]
+ },
+ {
+  "id": "elevenlabs",
+  "label": "elevenlabs",
+  "glyph": "⌇",
+  "ascii": "~",
+  "colour": "#CBB9F2",
+  "top": "⌇⌇⌇",
+  "mid": "─⌇─",
+  "bot": "⌇⌇⌇",
+  "match": [
+   "elevenlabs",
+   "eleven"
+  ]
+ },
+ {
+  "id": "glm",
+  "label": "glm",
+  "glyph": "◆",
+  "ascii": "<>",
+  "colour": "#3B82F6",
+  "top": "╱◆╲",
+  "mid": "│◆│",
+  "bot": "╲◆╱",
+  "match": [
+   "glm",
+   "zhipu",
+   "chatglm"
+  ]
+ },
+ {
+  "id": "minimax",
+  "label": "minimax",
+  "glyph": "◇",
+  "ascii": "<->",
+  "colour": "#FF6B6B",
+  "top": "╱◇╲",
+  "mid": "│◇│",
+  "bot": "╲◇╱",
+  "match": [
+   "minimax"
+  ]
+ },
+ {
+  "id": "lmstudio",
+  "label": "lm studio",
+  "glyph": "▣",
+  "ascii": "[#]",
+  "colour": "#7C3AED",
+  "top": "┌─┐",
+  "mid": "│▣│",
+  "bot": "└─┘",
+  "match": [
+   "lmstudio",
+   "lm-studio"
+  ]
+ },
+ {
+  "id": "aider",
+  "label": "aider",
+  "glyph": "⌸",
+  "ascii": "-a-",
+  "colour": "#14B8A6",
+  "top": "╭─╮",
+  "mid": "│⌸│",
+  "bot": "╰─╯",
+  "match": [
+   "aider"
+  ]
+ },
+ {
+  "id": "windsurf",
+  "label": "windsurf",
+  "glyph": "⌁",
+  "ascii": "~/",
+  "colour": "#58C4A0",
+  "top": "╭─╮",
+  "mid": "│⌁│",
+  "bot": "╰─╯",
+  "match": [
+   "windsurf",
+   "codeium"
+  ]
+ },
+ {
+  "id": "zed",
+  "label": "zed",
+  "glyph": "⌾",
+  "ascii": "(z)",
+  "colour": "#084CCF",
+  "top": "╭─╮",
+  "mid": "│⌾│",
+  "bot": "╰─╯",
+  "match": [
+   "zed"
+  ]
+ },
+ {
+  "id": "cline",
+  "label": "cline",
+  "glyph": "⌗",
+  "ascii": "[/]",
+  "colour": "#9CA3AF",
+  "top": "┌─┐",
+  "mid": "│⌗│",
+  "bot": "└─┘",
+  "match": [
+   "cline",
+   "roo"
+  ]
+ },
+ {
+  "id": "terminal",
+  "label": "shell",
+  "glyph": "❯",
+  "ascii": ">_",
+  "colour": "#E8E3D9",
+  "top": "▁▁▁",
+  "mid": "▮❯ ",
+  "bot": "▔▔▔",
+  "match": [
+   "zsh",
+   "bash",
+   "fish",
+   "shell",
+   "tmux"
+  ]
+ }
+]

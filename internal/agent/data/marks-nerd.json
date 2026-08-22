@@ -1,0 +1,145 @@
+[
+ {
+  "id": "claude",
+  "label": "claude",
+  "glyph": "",
+  "ascii": "*",
+  "colour": "#D97757",
+  "top": "   ",
+  "mid": "  ",
+  "bot": "   ",
+  "match": [
+   "claude"
+  ]
+ },
+ {
+  "id": "cursor",
+  "label": "cursor",
+  "glyph": "",
+  "ascii": "[]",
+  "colour": "#C9D1D9",
+  "top": "   ",
+  "mid": "  ",
+  "bot": "   ",
+  "match": [
+   "cursor"
+  ]
+ },
+ {
+  "id": "gemini",
+  "label": "gemini",
+  "glyph": "",
+  "ascii": "+",
+  "colour": "#6C7BF0",
+  "top": "   ",
+  "mid": "  ",
+  "bot": "   ",
+  "match": [
+   "gemini"
+  ]
+ },
+ {
+  "id": "qwen",
+  "label": "qwen",
+  "glyph": "",
+  "ascii": "<>",
+  "colour": "#A472F0",
+  "top": "   ",
+  "mid": "  ",
+  "bot": "   ",
+  "match": [
+   "qwen"
+  ]
+ },
+ {
+  "id": "grok",
+  "label": "grok",
+  "glyph": "",
+  "ascii": "x",
+  "colour": "#8FCB3F",
+  "top": "   ",
+  "mid": "  ",
+  "bot": "   ",
+  "match": [
+   "grok"
+  ]
+ },
+ {
+  "id": "ollama",
+  "label": "ollama",
+  "glyph": "🦙",
+  "ascii": "(o)",
+  "colour": "#5FD0C0",
+  "top": "   ",
+  "mid": " 🦙 ",
+  "bot": "   ",
+  "match": [
+   "ollama"
+  ]
+ },
+ {
+  "id": "openrouter",
+  "label": "openrouter",
+  "glyph": "",
+  "ascii": "<o>",
+  "colour": "#7C6AEF",
+  "top": "   ",
+  "mid": "  ",
+  "bot": "   ",
+  "match": [
+   "openrouter"
+  ]
+ },
+ {
+  "id": "deepseek",
+  "label": "deepseek",
+  "glyph": "",
+  "ascii": "(D",
+  "colour": "#4D6BFE",
+  "top": "   ",
+  "mid": "  ",
+  "bot": "   ",
+  "match": [
+   "deepseek"
+  ]
+ },
+ {
+  "id": "moonshot",
+  "label": "moonshot",
+  "glyph": "",
+  "ascii": "(K",
+  "colour": "#8B7FD4",
+  "top": "   ",
+  "mid": "  ",
+  "bot": "   ",
+  "match": [
+   "moonshot"
+  ]
+ },
+ {
+  "id": "copilot",
+  "label": "copilot",
+  "glyph": "",
+  "ascii": "(+)",
+  "colour": "#8B949E",
+  "top": "   ",
+  "mid": "  ",
+  "bot": "   ",
+  "match": [
+   "copilot"
+  ]
+ },
+ {
+  "id": "terminal",
+  "label": "shell",
+  "glyph": "",
+  "ascii": ">_",
+  "colour": "#E8E3D9",
+  "top": "   ",
+  "mid": "  ",
+  "bot": "   ",
+  "match": [
+   "terminal"
+  ]
+ }
+]
