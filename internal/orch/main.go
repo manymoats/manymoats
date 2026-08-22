@@ -6,6 +6,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -554,8 +555,19 @@ func printIcons() {
 	fmt.Println()
 }
 
+// frameFromEnv lets a snapshot render any point in the motion cycle. Without it
+// every capture is frame 0, so anyone reviewing a still has to GUESS what moves —
+// and a reviewer who guessed once told us the numbers animate, which they do not.
+func frameFromEnv() int {
+	n, err := strconv.Atoi(os.Getenv("ORCH_FRAME"))
+	if err != nil || n < 0 {
+		return 0
+	}
+	return n
+}
+
 func snapshot(v view) int {
-	m := model{w: 80, h: 40, view: v, names: namesFromEnv(), showHost: os.Getenv("ORCH_HOST") != ""}
+	m := model{w: 80, h: 40, view: v, names: namesFromEnv(), showHost: os.Getenv("ORCH_HOST") != "", frame: frameFromEnv()}
 	agent.SetAmbiguousWide(probeAmbiguousWide())
 	switch v := refresh().(type) {
 	case []agent.Agent:
