@@ -67,7 +67,7 @@
  {
   "id": "ollama",
   "label": "ollama",
-  "glyph": "🦙",
+  "glyph": "",
   "ascii": "(o)",
   "colour": "#5FD0C0",
   "top": "   ",
@@ -75,7 +75,8 @@
   "bot": "   ",
   "match": [
    "ollama"
-  ]
+  ],
+  "note": "U+1F999 LLAMA is absent from JetBrains Mono Nerd Font and renders as tofu. The plain set keeps the llama, where emoji fallback works."
  },
  {
   "id": "openrouter",

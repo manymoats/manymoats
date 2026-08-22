@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -21,4 +22,27 @@ func TestAnyNerdFontCounts(t *testing.T) {
 	if !NerdFontInstalled() {
 		t.Fatal("any Nerd Font must count — looking for one filename reported false on a machine that had one")
 	}
+}
+
+// The nerd overlay exists because a glyph the font lacks renders as a blank box.
+// Shipping an emoji in it defeats the whole point, so the set stays inside the
+// private-use planes the Nerd Font patch actually fills.
+func TestNerdGlyphsStayInThePatchedRanges(t *testing.T) {
+	for _, m := range nerdMarks(t) {
+		for _, r := range m.Glyph {
+			inPUA := (r >= 0xE000 && r <= 0xF8FF) || (r >= 0xF0000 && r <= 0xFFFFD)
+			if !inPUA && r > 0x2FFF {
+				t.Errorf("%s ships %q (U+%04X) in the nerd set — outside the patched ranges", m.ID, m.Glyph, r)
+			}
+		}
+	}
+}
+
+func nerdMarks(t *testing.T) []Mark {
+	t.Helper()
+	var ms []Mark
+	if err := json.Unmarshal(marksNerdJSON, &ms); err != nil {
+		t.Fatal(err)
+	}
+	return ms
 }

@@ -110,6 +110,15 @@ func load() {
 			for i, m := range list {
 				if n, ok := over[m.ID]; ok {
 					list[i].Glyph = n.Glyph
+					// Big() reads Mid. Leaving it on the unicode set meant the
+					// splash and the board showed the same source two ways.
+					list[i].Mid = n.Glyph
+					if n.Top != "" {
+						list[i].Top = n.Top
+					}
+					if n.Bot != "" {
+						list[i].Bot = n.Bot
+					}
 				}
 			}
 		}

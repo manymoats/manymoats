@@ -2,6 +2,7 @@ package orch
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -41,7 +42,13 @@ func (m model) splash() string {
 	}
 	if len(seen) > 0 {
 		var parts []string
-		for src, n := range seen {
+		srcs := make([]agent.Source, 0, len(seen))
+		for src := range seen {
+			srcs = append(srcs, src)
+		}
+		sort.Slice(srcs, func(i, j int) bool { return string(srcs[i]) < string(srcs[j]) })
+		for _, src := range srcs {
+			n := seen[src]
 			_, mid, _ := agent.MarkFor(src).Big()
 			parts = append(parts,
 				lipgloss.NewStyle().Foreground(lipgloss.Color(agent.MarkFor(src).Color)).Render(mid)+

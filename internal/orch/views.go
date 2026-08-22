@@ -2,6 +2,7 @@ package orch
 
 import (
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -39,17 +40,19 @@ func (m model) header(title string) string {
 // footer says only what is true and non-zero. "0 waiting" is noise dressed as
 // information — if nothing is waiting, the right word count is zero.
 func (m model) footer() string {
-	w, a, hidden := 0, 0, 0
+	w, a := 0, 0
 	for _, x := range m.agents {
 		switch x.State {
 		case agent.Working:
 			w++
 		case agent.Asks:
 			a++
-		default:
-			hidden++
 		}
 	}
+	// Count what is actually off screen. Bucketing done/stalled/idle/resident by
+	// state and calling the total "idle" labelled rows that were visible, with a
+	// word that was wrong for three of the four.
+	hidden := len(m.agents) - len(m.visible())
 	var parts []string
 	if w > 0 {
 		parts = append(parts, fmt.Sprintf("%d working", w))
@@ -61,7 +64,7 @@ func (m model) footer() string {
 		parts = append(parts, dim.Render("all clear"))
 	}
 	if hidden > 0 && !m.showAll {
-		parts = append(parts, dim.Render(fmt.Sprintf("%d idle", hidden)))
+		parts = append(parts, dim.Render(fmt.Sprintf("%d not shown", hidden)))
 	}
 
 	var b strings.Builder
@@ -154,7 +157,7 @@ func (m model) instrument() string {
 		if a.State == agent.Asks {
 			b.WriteString(inverted(a, " WAITING ON YOU "))
 		} else {
-			const rateCells = 8
+			const rateCells = 11
 			r := strings.Repeat(" ", rateCells)
 			if live(a) && a.TokensMin > 0 {
 				r = pad(rate(a.TokensMin)+"/m", rateCells)
@@ -170,8 +173,17 @@ func (m model) instrument() string {
 		}
 		b.WriteString("\n")
 	}
-	b.WriteString("\n" + m.footer())
+	b.WriteString(more(len(vis), 14) + "\n" + m.footer())
 	return b.String()
+}
+
+// more says out loud that the board is not showing everything. A count in the
+// footer that disagrees with the rows on screen reads as "this is all of them".
+func more(total, shown int) string {
+	if total <= shown {
+		return ""
+	}
+	return "  " + dim.Render(fmt.Sprintf("+%d more", total-shown)) + "\n"
 }
 
 func wave(frame, seed int, amp float64) string {
@@ -179,7 +191,7 @@ func wave(frame, seed int, amp float64) string {
 	r := []rune(glyphs)
 	var s strings.Builder
 	for x := 0; x < 26; x++ {
-		v := (sin(float64(x)*0.42+float64(frame)*0.3+float64(seed)) + 1) / 2
+		v := (math.Sin(float64(x)*0.42+float64(frame)*0.3+float64(seed)) + 1) / 2
 		i := int(v * amp)
 		if i > 6 {
 			i = 6
@@ -192,18 +204,11 @@ func wave(frame, seed int, amp float64) string {
 	return s.String()
 }
 
-func sin(x float64) float64 {
-	for x > 6.28318 {
-		x -= 6.28318
-	}
-	x2 := x * x
-	return x * (1 - x2/6 + x2*x2/120)
-}
-
 func (m model) waveform() string {
 	var b strings.Builder
 	b.WriteString(m.header("ORCH · waveform"))
-	for i, a := range m.agents {
+	vis := m.visible()
+	for i, a := range vis {
 		if i >= 6 {
 			break
 		}
@@ -214,12 +219,19 @@ func (m model) waveform() string {
 			b.WriteString("  " + inverted(a, " WAITING ON YOU ") + "\n\n")
 			continue
 		}
-		if live(a) {
-			b.WriteString("  " + c.Render(wave(m.frame, i, waveAmp(a.TokensMin))) + "\n\n")
+		if live(a) && a.TokensMin > 0 {
+			_, val := Reading(a)
+			b.WriteString("  " + c.Render(wave(m.frame, i, waveAmp(a.TokensMin))) + "  " + dim.Render(val) + "\n\n")
+		} else if live(a) {
+			// Cursor and the local models expose no token rate. A wave here would
+			// be a picture of a number nobody measured.
+			_, val := Reading(a)
+			b.WriteString("  " + dim.Render(strings.Repeat("·", 26)) + "  " + dim.Render(val) + "\n\n")
 		} else {
 			b.WriteString("  " + dim.Render(strings.Repeat("─", 26)+"  "+a.State.String()) + "\n\n")
 		}
 	}
+	b.WriteString(more(len(vis), 6))
 	b.WriteString(m.footer())
 	return b.String()
 }
@@ -243,7 +255,7 @@ func (m model) cards() string {
 		_, mid, _ := agent.MarkFor(a.Source).Render()
 		b.WriteString("  " + c.Render(tl+strings.Repeat(h, w)+tr) + "\n")
 		b.WriteString("  " + c.Render(v) + c.Bold(true).Render(pad(clipNo(" "+mid+" "+labelFor(a, m.names), w), w)) + c.Render(v) + "\n")
-		b.WriteString("  " + c.Render(v) + dim.Render(pad(" "+a.Project, w)) + c.Render(v) + "\n")
+		b.WriteString("  " + c.Render(v) + dim.Render(pad(clipNo(" "+a.Project, w), w)) + c.Render(v) + "\n")
 		if a.State == agent.Asks {
 			b.WriteString("  " + c.Render(v) + inverted(a, pad(" WAITING ON YOU", w)) + c.Render(v) + "\n")
 		} else {
@@ -282,6 +294,12 @@ func (m model) minimal() string {
 			working = append(working, label)
 		}
 	}
+	const maxStrip = 6
+	over := 0
+	if len(working) > maxStrip {
+		over = len(working) - maxStrip
+		working = working[:maxStrip]
+	}
 	if len(alerts) == 0 && len(working) == 0 {
 		return "  " + dim.Render("orch") + "  " +
 			lipgloss.NewStyle().Foreground(lipgloss.Color("#5FD0C0")).Render("all clear") +
@@ -293,6 +311,9 @@ func (m model) minimal() string {
 		b.WriteString(strings.Join(alerts, " ") + "  ")
 	}
 	b.WriteString(strings.Join(working, dim.Render("  ·  ")))
+	if over > 0 {
+		b.WriteString(dim.Render(fmt.Sprintf("  +%d", over)))
+	}
 	if m.showHost {
 		for _, st := range m.hosts {
 			if st.Reachable && st.GPUPct > 0 {

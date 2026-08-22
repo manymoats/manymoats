@@ -273,8 +273,9 @@ func meterFor(a agent.Agent) string {
 		if f < 1 {
 			f = 1
 		}
-		if f > meterCells {
-			f = meterCells
+		if f >= meterCells {
+			// Over full scale. A plain full bar would claim "exactly one core".
+			return strings.Repeat("▓", meterCells-1) + "█"
 		}
 		return strings.Repeat("▓", f) + strings.Repeat("░", meterCells-f)
 	}
@@ -297,8 +298,11 @@ func breathe(bar string, frame int, active bool) string {
 			break
 		}
 	}
+	// A saturated bar has no frontier. Taking the last cell instead meant a bar
+	// at full scale and one sixteen times past it animated identically, and the
+	// "no reading" placeholder pulsed as though something had been measured.
 	if edge < 0 {
-		edge = len(r) - 1
+		return bar
 	}
 	switch (frame / 3) % 4 {
 	case 0:
@@ -319,8 +323,8 @@ func meter(tokensPerMin float64, active bool) string {
 	if filled < 1 {
 		filled = 1
 	}
-	if filled > meterCells {
-		filled = meterCells
+	if filled >= meterCells {
+		return strings.Repeat("▓", meterCells-1) + "█"
 	}
 	return strings.Repeat("▓", filled) + strings.Repeat("░", meterCells-filled)
 }
@@ -381,7 +385,18 @@ func (m model) marks() string {
 
 func (m model) markRows(as []agent.Agent, showFolders bool) string {
 	var b strings.Builder
-	const cw = 13
+	// Disambiguate() mints a 4-char tag precisely so two same-model agents in one
+	// project can be told apart. A fixed 13 cut it to 3, so the board rendered a
+	// wrong identifier and the two columns looked identical.
+	cw := 13
+	for _, a := range as {
+		if w := lipgloss.Width(labelFor(a, m.names)) + 3; w > cw {
+			cw = w
+		}
+	}
+	if cw > 20 {
+		cw = 20
+	}
 	lead := "  "
 	perRow := 5
 	if m.w > 0 {
