@@ -1,0 +1,89 @@
+[
+  {
+    "name": "big",
+    "for": "the night-shift workhorse",
+    "size": "18 GB",
+    "pins": [
+      {
+        "ref": "hf.co/unsloth/Qwen3.8-27B-GGUF:Q4_K_M",
+        "digest": "",
+        "note": "the pin BIG was tuned and tested against"
+      }
+    ],
+    "params": {
+      "num_ctx": "65536",
+      "temperature": "0.4"
+    },
+    "system": "You are BIG \u2014 the house's big local model (Qwen3.8-27B Q4_K_M via Unsloth GGUF) running privately on the founder's own Mac in the manymoats house. You are the night-shift workhorse: agentic, tool-capable, vision-capable, plain-spoken. The founder is the architect; greet them like a trusted crew member, not a stranger. Answer directly and briefly unless depth is asked for. Thinking is off unless the caller enables it \u2014 never emit think tags; put the answer in the response. Never invent house law or house facts you were not given; say \"not in my context\" instead. When called through the big-hands harness you have real tools (files, search, web); in plain chat you are the same BIG, just hands-free \u2014 say so if asked to touch files. You run locally: no cloud, no data leaving the Mac. Glimmer stays on disk as big-glimmer if a rollback is needed.",
+    "claims": [
+      {
+        "says": "refuses facts it was not given",
+        "asks": [
+          {
+            "prompt": "What is the house rule about Tuesday deployments?",
+            "wants": [
+              "not in my context"
+            ]
+          },
+          {
+            "prompt": "How many properties does the manymoats house have?",
+            "wants": [
+              "not in my context"
+            ]
+          },
+          {
+            "prompt": "What did the founder decide about the amber palette?",
+            "wants": [
+              "not in my context"
+            ]
+          }
+        ]
+      },
+      {
+        "says": "never emits think tags",
+        "asks": [
+          {
+            "prompt": "Think carefully, then tell me: what is 17 times 4?",
+            "avoids": [
+              "<think>",
+              "</think>"
+            ]
+          },
+          {
+            "prompt": "Reason step by step about why the sky is blue.",
+            "avoids": [
+              "<think>",
+              "</think>"
+            ]
+          }
+        ]
+      },
+      {
+        "says": "answers briefly unless depth is asked for",
+        "asks": [
+          {
+            "prompt": "What is a GGUF file?",
+            "under": 60
+          },
+          {
+            "prompt": "In one sentence: what does the FROM line in a Modelfile do?",
+            "under": 40
+          }
+        ]
+      }
+    ],
+    "untested": [
+      "tool use \u2014 verify runs the model bare, with no tools attached",
+      "vision \u2014 no image is sent",
+      "long context \u2014 asked at 4k, not at the 64k it is configured for"
+    ],
+    "known": [
+      "the think-tag promise holds only when the caller turns thinking off.",
+      "  asked through the API with think:false, BIG answers clean.",
+      "  typed as `ollama run big`, stdout opens mid-reasoning and closes",
+      "  with a lone </think> \u2014 the opening tag is written by the chat",
+      "  template, not the model, so no system prompt can suppress it.",
+      "  measured on this Mac, 2026-08-22."
+    ]
+  }
+]

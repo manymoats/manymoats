@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/manymoats/manymoats/internal/agents"
 	"github.com/manymoats/manymoats/internal/eyes"
 	"github.com/manymoats/manymoats/internal/fc"
 	"github.com/manymoats/manymoats/internal/launcher"
@@ -18,6 +19,7 @@ func apps() []launcher.App {
 		{Name: "orch", What: "who's working, which model, what it costs", Ready: true, Run: orch.Main},
 		{Name: "credits", What: "what's actually free, and what only looks free", Ready: true, Run: fc.Main},
 		{Name: "eyes", What: "does this screen say what it measures", Ready: true, Run: eyes.Main},
+		{Name: "agents", What: "the house's tuned models, on your machine", Ready: true, Run: agents.Main},
 	}
 }
 
