@@ -45,7 +45,10 @@ func TestEveryViewShowsLifeWhenSomethingIsWorking(t *testing.T) {
 	for _, v := range []view{viewMarks, viewInstrument, viewWaveform, viewCards} {
 		seen := map[string]bool{}
 		for f := 0; f < 16; f++ {
-			seen[stripANSI(model{w: 100, frame: f, agents: as, view: v}.View())] = true
+			m := model{w: 100, frame: f, view: v}
+			m.record(as)
+			m.agents = as
+			seen[stripANSI(m.View())] = true
 		}
 		if len(seen) < 2 {
 			t.Errorf("%s is frozen across 16 frames", v)

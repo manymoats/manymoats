@@ -47,9 +47,54 @@ type model struct {
 	showHost    bool
 	hosts       []host.Stats
 	agents      []agent.Agent
+	history     map[string][]float64
 	frame       int
 	w, h        int
 	err         error
+}
+
+// histCap is how many samples the trace keeps — one per data tick, so 26
+// seconds of history at the one-second data clock.
+const histCap = 26
+
+// record appends this tick's reading. The trace draws THIS, not a synthetic
+// wave: a picture that scrolls like a history while being generated from the
+// current value implies the past is changing, which is a lie about data.
+func (m *model) record(as []agent.Agent) {
+	if m.history == nil {
+		m.history = map[string][]float64{}
+	}
+	seen := map[string]bool{}
+	for _, a := range as {
+		seen[a.ID] = true
+		v := a.TokensMin
+		h := append(m.history[a.ID], v)
+		if len(h) > histCap {
+			h = h[len(h)-histCap:]
+		}
+		m.history[a.ID] = h
+	}
+	for id := range m.history {
+		if !seen[id] {
+			delete(m.history, id)
+		}
+	}
+}
+
+// seedFixtureHistory fills the trace window for ORCH_FIXTURE only. It is not a
+// measurement and never runs on a real board.
+func (m *model) seedFixtureHistory() {
+	m.history = map[string][]float64{}
+	for _, a := range m.agents {
+		if a.TokensMin <= 0 {
+			continue
+		}
+		h := make([]float64, 0, histCap)
+		for i := 0; i < histCap; i++ {
+			h = append(h, a.TokensMin*(0.55+0.45*float64((i*7)%9)/8))
+		}
+		m.history[a.ID] = h
+	}
 }
 
 // Two clocks on purpose. Data refreshes once a second because reading session
@@ -180,6 +225,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case []agent.Agent:
 		m.agents = v
 		m.gotData = true
+		m.record(v)
 		// The picture yields to the data. If the short cut is still running when
 		// real state arrives, finish the sweep where it is and show the board.
 		if m.view == viewAnim && !m.animLong && m.animElapsed >= 450 {
@@ -585,6 +631,10 @@ func snapshot(v view) int {
 	if os.Getenv("ORCH_FIXTURE") != "" {
 		m.agents = fixtureAgents()
 		m.gotData = true
+		// A snapshot has no earlier ticks to draw from, so seed a plausible
+		// window. Marked here so nobody mistakes it for a measurement: it exists
+		// to make the frozen board reproducible, and only ORCH_FIXTURE reaches it.
+		m.seedFixtureHistory()
 		fmt.Print(m.View())
 		return 0
 	}
@@ -592,6 +642,7 @@ func snapshot(v view) int {
 	case []agent.Agent:
 		m.agents = v
 		m.gotData = true
+		m.record(v)
 		// The picture yields to the data. If the short cut is still running when
 		// real state arrives, finish the sweep where it is and show the board.
 		if m.view == viewAnim && !m.animLong && m.animElapsed >= 450 {

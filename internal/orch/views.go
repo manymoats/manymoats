@@ -186,6 +186,61 @@ func more(total, shown int) string {
 	return "  " + dim.Render(fmt.Sprintf("+%d more", total-shown)) + "\n"
 }
 
+// trace draws the samples actually recorded, oldest on the left. A position on
+// this line is a moment that happened, so the shape only changes when a new
+// reading arrives — the past holds still, because the past is fixed.
+func trace(h []float64, frame int, alive bool) string {
+	const cells = 26
+	glyphs := []rune("⣀⣄⣤⣦⣶⣷⣿")
+	if len(h) == 0 {
+		return strings.Repeat("·", cells)
+	}
+	peak := 0.0
+	for _, v := range h {
+		if v > peak {
+			peak = v
+		}
+	}
+	var s strings.Builder
+	// Not yet a full window: the empty part reads as "no reading yet", not zero.
+	for i := 0; i < cells-len(h); i++ {
+		s.WriteRune('·')
+	}
+	for n, v := range h {
+		i := 0
+		if peak > 0 {
+			i = int(v / peak * float64(len(glyphs)-1))
+		}
+		if i < 0 {
+			i = 0
+		}
+		if i >= len(glyphs) {
+			i = len(glyphs) - 1
+		}
+		// The live edge — where the next reading will land — is the only cell
+		// allowed to move. Everything left of it already happened.
+		if alive && n == len(h)-1 {
+			s.WriteRune(edgeGlyph(glyphs, i, frame))
+			continue
+		}
+		s.WriteRune(glyphs[i])
+	}
+	return s.String()
+}
+
+// edgeGlyph breathes the leading cell one step either side of its true level,
+// so the trace reads as running without misreporting the newest sample by more
+// than the one division the eye already treats as the frontier.
+func edgeGlyph(glyphs []rune, i, frame int) rune {
+	if (frame/3)%2 == 0 {
+		return glyphs[i]
+	}
+	if i > 0 {
+		return glyphs[i-1]
+	}
+	return glyphs[i]
+}
+
 func wave(frame, seed int, amp float64) string {
 	const glyphs = "⣀⣄⣤⣦⣶⣷⣿"
 	r := []rune(glyphs)
@@ -221,7 +276,7 @@ func (m model) waveform() string {
 		}
 		if live(a) && a.TokensMin > 0 {
 			_, val := Reading(a)
-			b.WriteString("  " + c.Render(wave(m.frame, i, waveAmp(a.TokensMin))) + "  " + dim.Render(val) + "\n\n")
+			b.WriteString("  " + c.Render(trace(m.history[a.ID], m.frame, live(a))) + "  " + dim.Render(val) + "\n\n")
 		} else if live(a) {
 			// Cursor and the local models expose no token rate. A wave here would
 			// be a picture of a number nobody measured.
