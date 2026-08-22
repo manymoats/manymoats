@@ -19,12 +19,31 @@ func apps() []launcher.App {
 	}
 }
 
+// normalise accepts the forms a person actually types. "manymoats -- orch" is
+// the founder's own phrasing and "--" is the POSIX end-of-options marker, but it
+// was being read as the name of an app, so the command printed nothing at all.
+func normalise(args []string, all []launcher.App) []string {
+	if len(args) > 0 && args[0] == "--" {
+		args = args[1:]
+	}
+	if len(args) > 0 {
+		for _, a := range all {
+			if args[0] == "--"+a.Name {
+				args[0] = a.Name
+			}
+		}
+	}
+	return args
+}
+
 func main() {
 	if os.Getenv("NO_COLOR") == "" {
 		lipgloss.SetColorProfile(termenv.TrueColor)
 	}
 	all := apps()
 	args := os.Args[1:]
+
+	args = normalise(args, all)
 
 	if len(args) == 0 {
 		fmt.Print(launcher.Directory(all))
