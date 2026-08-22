@@ -132,7 +132,7 @@ func key(o BalanceOptions, c Credit) (string, error) {
 	}
 	dirs := []string{o.KeyDir}
 	if home, err := os.UserHomeDir(); err == nil {
-		dirs = append(dirs, filepath.Join(home, ".config", "freecredits"))
+		dirs = append(dirs, filepath.Join(home, ".config", "manymoats", "credits"))
 		for _, f := range c.Source.KeyFiles {
 			dirs = append(dirs, filepath.Dir(filepath.Join(home, ".config", f)))
 		}

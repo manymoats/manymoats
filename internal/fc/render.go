@@ -145,7 +145,7 @@ func (a app) creditsView() string {
 	p(f.prose("nothing here is a guess. what we cannot check says unknown."))
 	if !a.holdings {
 		p(f.prose("we do not know which of these you hold. tell us in"))
-		p(f.prose("~/.freecredits/holdings.json and this becomes your list."))
+		p(f.prose("~/.manymoats/credits/holdings.json and this becomes your list."))
 	}
 	p(f.bot())
 	return b.String()
@@ -196,7 +196,7 @@ func (a app) coversView(model string) string {
 	var b strings.Builder
 	p := func(s string) { b.WriteString(s + "\n") }
 	p("")
-	p("  freecredits covers " + model)
+	p("  " + invocation + " covers " + model)
 	p("")
 	for _, l := range wrap(doorDef, 74) {
 		p("  " + l)
@@ -230,7 +230,7 @@ func (a app) coversView(model string) string {
 		}
 		p("")
 		p("  The command that would settle it by asking the door directly,")
-		p("  freecredits check, is not built yet.")
+		p("  " + invocation + " check, is not built yet.")
 		p("")
 		return b.String()
 	}
@@ -245,7 +245,7 @@ func (a app) coversView(model string) string {
 	p("  Any door not listed above is unknown. We have not checked it, and we")
 	p("  do not assume a credit covers something because the provider matches.")
 	p("")
-	p("  freecredits show <credit>  is one credit in full, every door we know.")
+	p("  " + invocation + " show <credit>  is one credit in full, every door we know.")
 	p("")
 	return b.String()
 }
@@ -511,7 +511,7 @@ func (a app) showView(id string) (string, bool) {
 	f := a.frame()
 
 	p("")
-	p("  freecredits show " + c.ID)
+	p("  " + invocation + " show " + c.ID)
 	p("")
 	p(f.top())
 	p(a.m.row(f, a.m.of(bal.Source), c.Name, hue(c.Colour, a.m.plain),

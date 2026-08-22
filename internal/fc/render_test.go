@@ -288,8 +288,11 @@ func TestUnknownModelSaysUnknownAndHowToFindOut(t *testing.T) {
 	if !strings.Contains(s, "unknown") {
 		t.Error("an unmatched question must print the word unknown")
 	}
-	if !strings.Contains(s, "freecredits check") {
-		t.Error("unknown has to say how to find out")
+	// Asserted against the invocation constant, not a literal. The literal is
+	// how this survived a rename: the test kept passing while the surface told
+	// the user to type a command that no longer exists.
+	if !strings.Contains(s, invocation+" check") {
+		t.Errorf("unknown has to say how to find out, naming %q", invocation)
 	}
 }
 
@@ -413,6 +416,24 @@ func TestEveryVerdictWordFitsItsColumn(t *testing.T) {
 	for _, v := range []credits.Verdict{credits.Covered, credits.NotCovered, credits.Unknown} {
 		if w := lipgloss.Width(verdictWord(v)); w >= verdictW {
 			t.Errorf("verdict word %q is %d wide, column is %d", verdictWord(v), w, verdictW)
+		}
+	}
+}
+
+// The tool must never tell you to type a command that does not exist. It was
+// renamed to `manymoats credits` and six user-facing strings kept the old name,
+// including the header of the covers screen — the surface most likely to be
+// read by someone who has just installed it.
+func TestNoSurfaceNamesACommandThatDoesNotExist(t *testing.T) {
+	for _, plain := range []bool{false, true} {
+		a := testApp(t, plain, fixtureHoldings(t))
+		for name, s := range surfaces(t, a) {
+			if strings.Contains(s, "freecredits") {
+				t.Errorf("%s still says \"freecredits\"; the command is %q", name, invocation)
+			}
+			if strings.Contains(s, ".freecredits/") {
+				t.Errorf("%s points at the old ~/.freecredits path", name)
+			}
 		}
 	}
 }
