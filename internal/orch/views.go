@@ -59,7 +59,13 @@ func (m model) pulse() string {
 }
 
 func (m model) header(title string) string {
-	return "  " + dim.Render(title) + " " + m.pulse() + strings.Repeat(" ", 28) + dim.Render(clockNow()) + "\n\n"
+	// The pulse sits against the clock on purpose. Floating beside the title it
+	// was an unlabelled dot — the adversary seat was right that it read as decor,
+	// because its meaning lived in my prose and not on the surface. Next to a
+	// running clock it needs no label: a clock says "now", and a pulse beside it
+	// says "still".
+	return "  " + dim.Render(title) + strings.Repeat(" ", 29) +
+		m.pulse() + " " + dim.Render(clockNow()) + "\n\n"
 }
 
 // footer says only what is true and non-zero. "0 waiting" is noise dressed as
@@ -422,7 +428,7 @@ func (m model) minimal() string {
 	// The strip you leave open all day is the one view where "is this still
 	// running?" matters most, and it was the only view with no answer — frozen
 	// across every frame, indistinguishable from a hung process. One cell.
-	b.WriteString(" " + dim.Render(heartbeat(m.frame, len(working) > 0 || len(alerts) > 0)) + " ")
+	b.WriteString("  " + dim.Render(heartbeat(m.frame, len(working) > 0 || len(alerts) > 0)) + " ")
 	if len(alerts) > 0 {
 		b.WriteString(strings.Join(alerts, " ") + "  ")
 	}
