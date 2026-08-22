@@ -2,6 +2,7 @@ package orch
 
 import (
 	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
 	"os"
 	"strings"
 	"testing"
@@ -358,5 +359,31 @@ func TestStateColumnDoesNotDriftBetweenCpuAndTokenRows(t *testing.T) {
 	}
 	if len(cols) != 1 {
 		t.Errorf("the state column lands in %d different places: %v", len(cols), cols)
+	}
+}
+
+// Clipping must keep the visible content, not just the width. The first fit()
+// measured in display cells and then cut with a rune counter that treated ANSI
+// escape bytes as characters, slicing through them: an 82-cell line came out as
+// six cells of wreckage, and the width test still passed because the result was
+// short enough.
+func TestClippingKeepsTheVisiblePrefix(t *testing.T) {
+	lipgloss.SetColorProfile(termenv.TrueColor)
+	styled := lipgloss.NewStyle().Foreground(lipgloss.Color("#5FD0C0"))
+	line := styled.Render("opus-5") + " plain " + styled.Render("cursor") + " tail"
+	for _, w := range []int{4, 8, 14, 20, 60} {
+		got := clipStyled(line, w)
+		if gw := lipgloss.Width(got); gw > w {
+			t.Errorf("w=%d: clipped to %d cells", w, gw)
+		}
+		plainIn := stripANSI(line)
+		plainOut := stripANSI(got)
+		want := plainIn
+		if len(want) > len(plainOut) {
+			want = want[:len(plainOut)]
+		}
+		if plainOut != want {
+			t.Errorf("w=%d: content mangled\n  got  %q\n  want prefix of %q", w, plainOut, plainIn)
+		}
 	}
 }

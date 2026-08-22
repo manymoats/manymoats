@@ -126,11 +126,37 @@ func (m model) footer() string {
 // to leave it — being stuck with no visible exit is worse than a little noise.
 // heartbeat is the whole liveness signal for the minimal strip: one cell,
 // carrying no value, next to nothing it could be mistaken for.
+// clockShort is minutes only. Seconds cost two cells the strip does not have,
+// and a strip you glance at does not need them.
+func clockShort() string {
+	if os.Getenv("ORCH_FIXTURE") != "" {
+		return "00:00"
+	}
+	return time.Now().Format("15:04")
+}
+
 func heartbeat(frame int, alive bool) string {
 	if !alive {
 		return " "
 	}
 	return string([]rune("·••·")[(frame/3)%4])
+}
+
+// stripStyle measures what a styled string will actually occupy.
+func stripStyle(s string) string {
+	var b strings.Builder
+	for i := 0; i < len(s); {
+		if s[i] == 0x1b {
+			for i < len(s) && s[i] != 'm' {
+				i++
+			}
+			i++
+			continue
+		}
+		b.WriteByte(s[i])
+		i++
+	}
+	return b.String()
 }
 
 func minimalKeys() string {
@@ -413,26 +439,48 @@ func (m model) minimal() string {
 			working = append(working, label)
 		}
 	}
-	const maxStrip = 6
-	over := 0
-	if len(working) > maxStrip {
-		over = len(working) - maxStrip
-		working = working[:maxStrip]
+	// The strip has fixed chrome — the pulse, the clock, the way back, and the
+	// maker line the founder asked to always be visible. Clipping from the right
+	// ate the maker. So the chrome is reserved and the AGENTS take what is left,
+	// dropping to a count when they do not fit. A strip that trims its own name
+	// to show one more agent has its priorities backwards.
+	width := m.w
+	if width <= 0 {
+		width = 80
 	}
+	// Estimating the chrome cost guessed wrong by sixteen cells. Assemble the
+	// real line, measure it, drop one agent, repeat — exact, and cheap at this
+	// size.
+	over := 0
+	for {
+		if lipgloss.Width(m.stripLine(alerts, working, over)) <= width || len(working) == 0 {
+			break
+		}
+		over++
+		working = working[:len(working)-1]
+	}
+	return m.stripLine(alerts, working, over)
+}
+
+// stripLine assembles the one-line strip. The pulse and clock lead, so on a
+// narrow terminal the anchor telling you the board is alive is the last thing
+// to go, not the first.
+func (m model) stripLine(alerts, working []string, over int) string {
 	if len(alerts) == 0 && len(working) == 0 {
-		return "  " + dim.Render("orch") + "  " +
+		return "  " + dim.Render(heartbeat(m.frame, false)) + " " + dim.Render(clockShort()) + "  " +
 			lipgloss.NewStyle().Foreground(lipgloss.Color("#5FD0C0")).Render("all clear") +
 			"   " + minimalKeys() + "   " + maker() + "\n"
 	}
 	var b strings.Builder
-	// The strip you leave open all day is the one view where "is this still
-	// running?" matters most, and it was the only view with no answer — frozen
-	// across every frame, indistinguishable from a hung process. One cell.
-	b.WriteString("  " + dim.Render(heartbeat(m.frame, len(working) > 0 || len(alerts) > 0)) + " ")
+	// The pulse and clock lead the line. This is the view that gets clipped on a
+	// narrow terminal, so the anchor saying the board is alive must be the last
+	// thing to go, not the first.
+	b.WriteString("  " + dim.Render(heartbeat(m.frame, len(working) > 0 || len(alerts) > 0)) +
+		" " + dim.Render(clockShort()) + "  ")
 	if len(alerts) > 0 {
 		b.WriteString(strings.Join(alerts, " ") + "  ")
 	}
-	b.WriteString(strings.Join(working, dim.Render("  ·  ")))
+	b.WriteString(strings.Join(working, dim.Render(" · ")))
 	if over > 0 {
 		b.WriteString(dim.Render(fmt.Sprintf("  +%d", over)))
 	}
@@ -443,7 +491,9 @@ func (m model) minimal() string {
 			}
 		}
 	}
-	b.WriteString("   " + minimalKeys() + "   " + maker() + "\n")
+	// Two spaces, not three. The strip sat one cell from its limit, so a rate
+	// one character longer cost a whole agent — a sixteen-cell jump to save one.
+	b.WriteString("  " + minimalKeys() + "  " + maker() + "\n")
 	return b.String()
 }
 

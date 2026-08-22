@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -372,10 +373,43 @@ func fit(s string, w int) string {
 	lines := strings.Split(s, "\n")
 	for i, l := range lines {
 		if lipgloss.Width(l) > w {
-			lines[i] = agent.Shorten(l, w)
+			lines[i] = clipStyled(l, w)
 		}
 	}
 	return strings.Join(lines, "\n")
+}
+
+// clipStyled truncates to w DISPLAY CELLS without ever cutting inside an escape
+// sequence. The first version measured with lipgloss.Width and then cut with a
+// rune-counting shortener, which counted escape bytes as content and sliced
+// through them — the line came out as six cells of garbage. Same bug the house
+// already paid for once with pad().
+func clipStyled(s string, w int) string {
+	var b strings.Builder
+	seen := 0
+	for i := 0; i < len(s); {
+		if s[i] == 0x1b {
+			j := i
+			for j < len(s) && s[j] != 'm' {
+				j++
+			}
+			if j < len(s) {
+				j++
+			}
+			b.WriteString(s[i:j]) // styles cost no cells and are never cut
+			i = j
+			continue
+		}
+		r, size := utf8.DecodeRuneInString(s[i:])
+		rw := lipgloss.Width(string(r))
+		if seen+rw > w {
+			break
+		}
+		b.WriteRune(r)
+		seen += rw
+		i += size
+	}
+	return b.String() + "\x1b[0m"
 }
 
 func (m model) View() string {
