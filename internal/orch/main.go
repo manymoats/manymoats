@@ -360,26 +360,47 @@ func meter(tokensPerMin float64, active bool) string {
 	return strings.Repeat("▓", filled) + strings.Repeat("░", meterCells-filled)
 }
 
+// fit is the last guard before anything reaches the screen. Only the marks
+// board reflows to the terminal width; every other view is laid out at a fixed
+// size, and on a narrow terminal an over-long line wraps into garbage that
+// looks like a rendering bug. Clipping is not a layout — it is the promise that
+// the board never spills.
+func fit(s string, w int) string {
+	if w <= 0 {
+		return s
+	}
+	lines := strings.Split(s, "\n")
+	for i, l := range lines {
+		if lipgloss.Width(l) > w {
+			lines[i] = agent.Shorten(l, w)
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
 func (m model) View() string {
 	if m.err != nil {
 		return "\n  " + lipgloss.NewStyle().Bold(true).Render("orch · error") + "\n  " +
 			dim.Render(m.err.Error()) + "\n\n  " + dim.Render("q quit") + "\n"
 	}
+	var out string
 	switch m.view {
 	case viewAnim:
-		return m.animView()
+		out = m.animView()
 	case viewSplash:
-		return m.splash()
+		out = m.splash()
 	case viewInstrument:
-		return m.instrument()
+		out = m.instrument()
 	case viewWaveform:
-		return m.waveform()
+		out = m.waveform()
 	case viewCards:
-		return m.cards()
+		out = m.cards()
 	case viewMinimal:
-		return m.minimal()
+		out = m.minimal()
+	default:
+		out = m.marks()
 	}
-	return m.marks()
+	return fit(out, m.w)
 }
 
 // marks lays agents ACROSS the screen, not down it. When everything is in one
@@ -456,6 +477,13 @@ func (m model) markRows(as []agent.Agent, showFolders bool) string {
 			l2.WriteString("  " + pad(c.Bold(live(a)).Render(agent.Shorten(labelFor(a, m.names), cw-3)), cw-2))
 			if a.State == agent.Asks {
 				l3.WriteString("  " + pad(inverted(a, "needs you"), cw-2))
+				l4.WriteString("  " + pad(dim.Render(short(a.Since)), cw-2))
+			} else if !live(a) {
+				// Without this, a stalled agent and an idle one both rendered as
+				// dots with nothing under them — identical in monochrome, and the
+				// difference between "died six hours ago" and "never started" is
+				// exactly the one worth noticing.
+				l3.WriteString("  " + pad(dim.Render(a.State.String()), cw-2))
 				l4.WriteString("  " + pad(dim.Render(short(a.Since)), cw-2))
 			} else {
 				bar, val := Reading(a)

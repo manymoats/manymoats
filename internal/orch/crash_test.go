@@ -300,3 +300,39 @@ func TestMinimalAlwaysSaysHowToLeave(t *testing.T) {
 		}
 	}
 }
+
+// Only the marks board reflows. Every other view is laid out at a fixed size,
+// so on a narrow terminal it must be clipped rather than allowed to wrap into
+// something that reads as a rendering bug.
+func TestNoViewEverSpillsPastTheTerminal(t *testing.T) {
+	as := []agent.Agent{
+		{Source: agent.Claude, Model: "opus-5-with-a-long-name", Project: "a-very-long-project-name", State: agent.Working, TokensMin: 10400},
+		{Source: agent.Cursor, Model: "cursor", Project: "manymoats", State: agent.Asks, Since: time.Minute},
+		{Source: agent.Ollama, Model: "big", Project: "p", State: agent.Stalled, Since: 6 * time.Hour},
+	}
+	for _, w := range []int{40, 60, 80, 120} {
+		for v := viewAnim; v <= viewMinimal; v++ {
+			m := model{w: w, h: 40, agents: as, view: v, showAll: true}
+			m.record(as)
+			for i, line := range strings.Split(m.View(), "\n") {
+				if got := lipgloss.Width(line); got > w {
+					t.Errorf("%s at w=%d: line %d is %d columns", v, w, i+1, got)
+				}
+			}
+		}
+	}
+}
+
+// A stalled agent and an idle one must not render identically. Colour is
+// identity, not state — so the difference has to survive monochrome.
+func TestStalledAndIdleAreNotTheSamePicture(t *testing.T) {
+	mk := func(st agent.State, since time.Duration) string {
+		as := []agent.Agent{{Source: agent.Ollama, Model: "big", Project: "p", State: st, Since: since}}
+		m := model{w: 80, agents: as, view: viewMarks, showAll: true}
+		m.record(as)
+		return stripANSI(m.View())
+	}
+	if mk(agent.Stalled, 6*time.Hour) == mk(agent.Idle, 0) {
+		t.Error("stalled and idle render identically without colour")
+	}
+}
