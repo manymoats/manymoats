@@ -3,6 +3,7 @@ package orch
 import (
 	"fmt"
 	"math"
+	"os"
 	"strings"
 	"time"
 
@@ -33,8 +34,32 @@ func pad(s string, n int) string {
 	return s + strings.Repeat(" ", n-w)
 }
 
+// clockNow is frozen under ORCH_FIXTURE. Two snapshots are two processes, so
+// the wall clock advances between them and lands in the diff looking exactly
+// like an animated digit — evidence that cannot tell motion from time is
+// useless, and this is the second time that trap has cost a review round.
+func clockNow() string {
+	if os.Getenv("ORCH_FIXTURE") != "" {
+		return "00:00:00"
+	}
+	return time.Now().Format("15:04:05")
+}
+
+// pulse is the whole liveness signal now: one cell, carrying no value, in every
+// view's header. Anything that encodes a number holds still.
+func (m model) pulse() string {
+	live := false
+	for _, a := range m.agents {
+		if a.State == agent.Working || a.State == agent.Asks {
+			live = true
+			break
+		}
+	}
+	return dim.Render(heartbeat(m.frame, live))
+}
+
 func (m model) header(title string) string {
-	return "  " + dim.Render(title) + strings.Repeat(" ", 30) + dim.Render(time.Now().Format("15:04:05")) + "\n\n"
+	return "  " + dim.Render(title) + " " + m.pulse() + strings.Repeat(" ", 28) + dim.Render(clockNow()) + "\n\n"
 }
 
 // footer says only what is true and non-zero. "0 waiting" is noise dressed as
@@ -177,7 +202,7 @@ func (m model) instrument() string {
 			if pot == "" {
 				pot = "—"
 			}
-			b.WriteString(c.Render(breathe(meterFor(a), m.frame, live(a))) + dim.Render(r) +
+			b.WriteString(c.Render(meterFor(a)) + dim.Render(r) +
 				dim.Render(fmt.Sprintf(" %-9s %5s  %-11s", a.State, short(a.Since), pot)))
 		}
 		b.WriteString("\n")
@@ -198,7 +223,7 @@ func more(total, shown int) string {
 // trace draws the samples actually recorded, oldest on the left. A position on
 // this line is a moment that happened, so the shape only changes when a new
 // reading arrives — the past holds still, because the past is fixed.
-func trace(h []float64, frame int, alive bool) string {
+func trace(h []float64, _ int, _ bool) string {
 	const cells = 26
 	glyphs := []rune("⣀⣄⣤⣦⣶⣷⣿")
 	if len(h) == 0 {
@@ -221,12 +246,7 @@ func trace(h []float64, frame int, alive bool) string {
 		if i >= len(glyphs) {
 			i = len(glyphs) - 1
 		}
-		// The live edge — where the next reading will land — is the only cell
-		// allowed to move. Everything left of it already happened.
-		if alive && n == len(h)-1 {
-			s.WriteRune(edgeGlyph(glyphs, i, frame))
-			continue
-		}
+		_ = n
 		s.WriteRune(glyphs[i])
 	}
 	return s.String()
@@ -243,19 +263,6 @@ func traceLevel(v float64, levels int) int {
 		f = levels - 1
 	}
 	return f
-}
-
-// edgeGlyph breathes the leading cell one step either side of its true level,
-// so the trace reads as running without misreporting the newest sample by more
-// than the one division the eye already treats as the frontier.
-func edgeGlyph(glyphs []rune, i, frame int) rune {
-	if (frame/3)%2 == 0 {
-		return glyphs[i]
-	}
-	if i > 0 {
-		return glyphs[i-1]
-	}
-	return glyphs[i]
 }
 
 func wave(frame, seed int, amp float64) string {
@@ -349,7 +356,6 @@ func (m model) cards() string {
 			b.WriteString("  " + c.Render(v) + inverted(a, pad(" WAITING ON YOU", w)) + c.Render(v) + "\n")
 		} else {
 			bar, val := Reading(a)
-			bar = breathe(bar, m.frame, live(a))
 			line := fmt.Sprintf(" %s  %s", c.Render(bar), val)
 			b.WriteString("  " + c.Render(v) + pad(line, w) + c.Render(v) + "\n")
 		}

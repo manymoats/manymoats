@@ -340,38 +340,11 @@ func meterFor(a agent.Agent) string {
 	return dim.Render(strings.Repeat("·", meterCells))
 }
 
-// breathe animates ONLY the frontier — the single cell where filled meets empty.
-// The level itself never moves, because the level is data. The frontier moving
-// is affordance: it says "this is running", which is true, and it says nothing
-// about the number, which would be a lie.
-func breathe(bar string, frame int, active bool) string {
-	if !active {
-		return bar
-	}
-	r := []rune(bar)
-	edge := -1
-	for i, c := range r {
-		if c == '░' {
-			edge = i
-			break
-		}
-	}
-	// A saturated bar has no frontier. Taking the last cell instead meant a bar
-	// at full scale and one sixteen times past it animated identically, and the
-	// "no reading" placeholder pulsed as though something had been measured.
-	if edge < 0 {
-		return bar
-	}
-	switch (frame / 3) % 4 {
-	case 0:
-		r[edge] = '░'
-	case 1, 3:
-		r[edge] = '▒'
-	case 2:
-		r[edge] = '▓'
-	}
-	return string(r)
-}
+// breathe is gone. It shaded the frontier cell of the meter, and the adversary
+// seat was right that this alters a payload: a reader counting filled cells sees
+// ▓ where the level is ░, which is one whole division. The number never moved,
+// but the bar is data too. Liveness now comes from heartbeat() — one cell that
+// encodes nothing, so it can be animated freely.
 
 func meter(tokensPerMin float64, active bool) string {
 	if !active || tokensPerMin <= 0 {
@@ -486,7 +459,6 @@ func (m model) markRows(as []agent.Agent, showFolders bool) string {
 				l4.WriteString("  " + pad(dim.Render(short(a.Since)), cw-2))
 			} else {
 				bar, val := Reading(a)
-				bar = breathe(bar, m.frame, live(a))
 				l3.WriteString("  " + pad(c.Render(bar), cw-2))
 				l4.WriteString("  " + pad(dim.Render(val), cw-2))
 			}

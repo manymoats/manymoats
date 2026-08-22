@@ -58,11 +58,10 @@ func TestEveryViewShowsLifeWhenSomethingIsWorking(t *testing.T) {
 	}
 }
 
-// The house law is that motion is affordance and a payload is never animated
-// into view. A reviewer reading a still cannot check that — one read our stills
-// and reported that the numbers animate, which they do not — so this checks it
-// mechanically: render one fixed state across a full motion cycle and assert
-// that every readable character is byte-identical in every frame.
+// Motion is affordance, never payload. This is the mechanical enforcement:
+// render one fixed state across a full motion cycle and assert that the only
+// character which ever differs is the pulse. Anything encoding a value — a
+// number, a meter block, a trace cell — must be byte-identical in every frame.
 func TestOnlyTheFrontierEverMoves(t *testing.T) {
 	base := model{w: 80, h: 40, gotData: true, agents: []agent.Agent{
 		{Source: agent.Claude, Model: "opus-5", Project: "orch", State: agent.Working, TokensMin: 10400},
@@ -72,19 +71,12 @@ func TestOnlyTheFrontierEverMoves(t *testing.T) {
 	// letters, punctuation — is payload and must be identical in every frame. The
 	// indicator glyphs (meter blocks, the braille wave, the no-reading dots) are
 	// affordance and are allowed to move; that is what says "this is alive".
-	affordance := func(r rune) bool {
-		switch {
-		case r >= 0x2580 && r <= 0x259F: // block elements — the meter
-			return true
-		case r >= 0x2800 && r <= 0x28FF: // braille — the wave
-			return true
-		case r == '·' || r == '•':
-			// indicator dots: the no-reading placeholder and the minimal strip's
-			// heartbeat. Neither carries a value anyone reads.
-			return true
-		}
-		return false
-	}
+	// The rule is now absolute: the ONLY thing on the board allowed to move is
+	// the pulse. Meter blocks and the braille trace both encode values — the
+	// adversary seat was right that shading a bar's frontier moves the readable
+	// level by a whole division — so they hold still and liveness lives in one
+	// cell that encodes nothing.
+	affordance := func(r rune) bool { return r == '·' || r == '•' }
 
 	for _, v := range []view{viewMarks, viewInstrument, viewWaveform, viewCards, viewMinimal} {
 		m := base
