@@ -105,3 +105,42 @@ func TestOnlyTheFrontierEverMoves(t *testing.T) {
 		}
 	}
 }
+
+// The trace claims to be a recorded history. That claim has two halves, and the
+// frame-diff evidence only proved one of them. This proves the other: when a
+// NEW sample arrives the window advances by one, and every cell that survives
+// the shift keeps the exact glyph it already had. A window-relative scale broke
+// this — one new high silently redrew the whole past.
+func TestHistoryAdvancesWithoutRewritingThePast(t *testing.T) {
+	var m model
+	a := agent.Agent{Source: agent.Claude, Model: "opus-5", Project: "p", State: agent.Working}
+	rates := []float64{800, 4000, 20000, 300, 45000, 12000, 60, 33000}
+
+	var prev string
+	for step, r := range rates {
+		a.TokensMin = r
+		m.record([]agent.Agent{a})
+		got := trace(m.history[a.ID], 0, false)
+		if prev != "" {
+			pr, gr := []rune(prev), []rune(got)
+			// the newest cell is the only one allowed to be new
+			old := string(pr[len(pr)-(step):])
+			new := string(gr[len(gr)-(step)-1 : len(gr)-1])
+			if old != new {
+				t.Fatalf("step %d rewrote history: %q became %q\n  before %s\n  after  %s",
+					step, old, new, prev, got)
+			}
+		}
+		prev = got
+	}
+
+	// and a new all-time high must not rescale anything already drawn
+	before := trace(m.history[a.ID], 0, false)
+	a.TokensMin = 999999
+	m.record([]agent.Agent{a})
+	after := []rune(trace(m.history[a.ID], 0, false))
+	b := []rune(before)
+	if string(b[1:]) != string(after[:len(after)-1]) {
+		t.Errorf("a new peak rescaled the past\n  before %s\n  after  %s", before, string(after))
+	}
+}

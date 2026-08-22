@@ -195,22 +195,17 @@ func trace(h []float64, frame int, alive bool) string {
 	if len(h) == 0 {
 		return strings.Repeat("·", cells)
 	}
-	peak := 0.0
-	for _, v := range h {
-		if v > peak {
-			peak = v
-		}
-	}
 	var s strings.Builder
 	// Not yet a full window: the empty part reads as "no reading yet", not zero.
 	for i := 0; i < cells-len(h); i++ {
 		s.WriteRune('·')
 	}
 	for n, v := range h {
-		i := 0
-		if peak > 0 {
-			i = int(v / peak * float64(len(glyphs)-1))
-		}
+		// A window-relative scale would redraw every historical cell the moment a
+		// new high arrived — the past changing because the future did. The scale
+		// is fixed, and it is the same one the meter uses, so a cell here and a
+		// bar there mean the same thing.
+		i := traceLevel(v, len(glyphs))
 		if i < 0 {
 			i = 0
 		}
@@ -226,6 +221,19 @@ func trace(h []float64, frame int, alive bool) string {
 		s.WriteRune(glyphs[i])
 	}
 	return s.String()
+}
+
+// traceLevel maps a rate to a glyph index on a FIXED log scale — the same
+// 50k/min ceiling meterFor uses. Fixed is what makes recorded history stable.
+func traceLevel(v float64, levels int) int {
+	if v <= 0 {
+		return 0
+	}
+	f := int(math.Round(math.Log10(v+1) / math.Log10(50000) * float64(levels-1)))
+	if f >= levels {
+		f = levels - 1
+	}
+	return f
 }
 
 // edgeGlyph breathes the leading cell one step either side of its true level,
