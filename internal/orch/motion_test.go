@@ -42,7 +42,9 @@ func TestTheLevelNeverMovesOnlyTheFrontier(t *testing.T) {
 func TestEveryViewShowsLifeWhenSomethingIsWorking(t *testing.T) {
 	as := []agent.Agent{{Source: agent.Claude, Model: "opus", Project: "kpf",
 		State: agent.Working, TokensMin: 11000, Since: time.Second}}
-	for _, v := range []view{viewMarks, viewInstrument, viewWaveform, viewCards} {
+	// viewMinimal was excluded here, and it was the one view that had gone
+	// completely static — the omission hid the defect.
+	for _, v := range []view{viewMarks, viewInstrument, viewWaveform, viewCards, viewMinimal} {
 		seen := map[string]bool{}
 		for f := 0; f < 16; f++ {
 			m := model{w: 100, frame: f, view: v}
@@ -76,7 +78,9 @@ func TestOnlyTheFrontierEverMoves(t *testing.T) {
 			return true
 		case r >= 0x2800 && r <= 0x28FF: // braille — the wave
 			return true
-		case r == '·':
+		case r == '·' || r == '•':
+			// indicator dots: the no-reading placeholder and the minimal strip's
+			// heartbeat. Neither carries a value anyone reads.
 			return true
 		}
 		return false

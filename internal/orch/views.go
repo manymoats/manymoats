@@ -93,6 +93,15 @@ func (m model) footer() string {
 // first-run only.
 // minimalKeys is the way out. A strip you leave open all day must still say how
 // to leave it — being stuck with no visible exit is worse than a little noise.
+// heartbeat is the whole liveness signal for the minimal strip: one cell,
+// carrying no value, next to nothing it could be mistaken for.
+func heartbeat(frame int, alive bool) string {
+	if !alive {
+		return " "
+	}
+	return string([]rune("·••·")[(frame/3)%4])
+}
+
 func minimalKeys() string {
 	return lipgloss.NewStyle().Foreground(lipgloss.Color("#5c6673")).Render("m back · q quit")
 }
@@ -404,7 +413,10 @@ func (m model) minimal() string {
 			"   " + minimalKeys() + "   " + maker() + "\n"
 	}
 	var b strings.Builder
-	b.WriteString("  ")
+	// The strip you leave open all day is the one view where "is this still
+	// running?" matters most, and it was the only view with no answer — frozen
+	// across every frame, indistinguishable from a hung process. One cell.
+	b.WriteString(" " + dim.Render(heartbeat(m.frame, len(working) > 0 || len(alerts) > 0)) + " ")
 	if len(alerts) > 0 {
 		b.WriteString(strings.Join(alerts, " ") + "  ")
 	}
