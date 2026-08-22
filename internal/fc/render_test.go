@@ -381,3 +381,38 @@ func TestNoSurfaceClaimsAChargeItCannotKnow(t *testing.T) {
 		}
 	}
 }
+
+// A column that overflows is invisible to a wording check and obvious to a
+// reader: the verdict ran into the door column with no gap the moment the
+// wording grew from nine characters to eighteen, and grepping for the phrase
+// could not find it because there was no space left to grep for. This checks
+// the geometry, so any future wording change is caught by construction.
+func TestTableColumnsHoldNoMatterHowLongTheCellIs(t *testing.T) {
+	cases := [][3]string{
+		{"pays for", "Gemini, Veo, Imagen", "Vertex AI"},
+		{"not covered", "Gemini", "Gemini API (AI Studio)"},
+		{"a verdict far longer than its column", "what", "door"},
+		{"ok", "a what cell that is very much longer than the column it lives in", "door"},
+	}
+	for _, c := range cases {
+		line := []rune(tableRow(c[0], c[1], c[2])[0])
+		for _, at := range []int{2 + verdictW, doorCol} {
+			if at >= len(line) {
+				continue
+			}
+			if line[at-1] != ' ' {
+				t.Errorf("cell %q ran to the column boundary at %d with no gap: %q",
+					c[0], at, strings.TrimRight(string(line), " "))
+			}
+		}
+	}
+}
+
+// The words may change; they must stay inside the column when they do.
+func TestEveryVerdictWordFitsItsColumn(t *testing.T) {
+	for _, v := range []credits.Verdict{credits.Covered, credits.NotCovered, credits.Unknown} {
+		if w := lipgloss.Width(verdictWord(v)); w >= verdictW {
+			t.Errorf("verdict word %q is %d wide, column is %d", verdictWord(v), w, verdictW)
+		}
+	}
+}

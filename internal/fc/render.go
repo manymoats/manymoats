@@ -377,7 +377,11 @@ const (
 
 func tableRow(verdict, what, door string) []string {
 	lines := wrap(door, frameW-doorCol)
-	out := []string{"  " + pad(verdict, verdictW) + pad(what, whatW) + lines[0]}
+	// pad only pads UP. A cell wider than its column ran straight into the next
+	// one with no gap — which is exactly what happened when the verdict wording
+	// grew from nine characters to eighteen.
+	out := []string{"  " + pad(clip(verdict, verdictW-1), verdictW) +
+		pad(clip(what, whatW-1), whatW) + lines[0]}
 	for _, l := range lines[1:] {
 		out = append(out, strings.Repeat(" ", doorCol)+l)
 	}
@@ -441,7 +445,7 @@ func verdictWord(v credits.Verdict) string {
 	case credits.Covered:
 		return "pays for"
 	case credits.NotCovered:
-		return "not on this credit"
+		return "not covered"
 	default:
 		return string(credits.Unknown)
 	}
