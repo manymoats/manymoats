@@ -484,7 +484,13 @@ func (m model) markRows(as []agent.Agent, showFolders bool) string {
 				// difference between "died six hours ago" and "never started" is
 				// exactly the one worth noticing.
 				l3.WriteString("  " + pad(dim.Render(a.State.String()), cw-2))
-				l4.WriteString("  " + pad(dim.Render(short(a.Since)), cw-2))
+				// "0s" under an idle agent is a zero dressed as information —
+				// the founder's own rule: if there is nothing, show nothing.
+				age := ""
+				if a.Since > 0 {
+					age = short(a.Since)
+				}
+				l4.WriteString("  " + pad(dim.Render(age), cw-2))
 			} else {
 				bar, val := Reading(a)
 				l3.WriteString("  " + pad(c.Render(bar), cw-2))

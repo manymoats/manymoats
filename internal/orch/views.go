@@ -191,10 +191,10 @@ func (m model) instrument() string {
 		if a.State == agent.Asks {
 			b.WriteString(inverted(a, " WAITING ON YOU "))
 		} else {
-			const rateCells = 11
+			const rateCells = 10
 			r := strings.Repeat(" ", rateCells)
 			if live(a) && a.TokensMin > 0 {
-				r = pad(rate(a.TokensMin)+"/m", rateCells)
+				r = pad(strings.TrimSpace(rate(a.TokensMin))+"/m", rateCells)
 			} else if a.CPUPct > 0 {
 				r = pad(cores(a.CPUPct), rateCells)
 			}
@@ -202,7 +202,7 @@ func (m model) instrument() string {
 			if pot == "" {
 				pot = "—"
 			}
-			b.WriteString(c.Render(meterFor(a)) + dim.Render(r) +
+			b.WriteString(c.Render(meterFor(a)) + " " + dim.Render(r) +
 				dim.Render(fmt.Sprintf(" %-9s %5s  %-11s", a.State, short(a.Since), pot)))
 		}
 		b.WriteString("\n")

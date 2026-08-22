@@ -336,3 +336,27 @@ func TestStalledAndIdleAreNotTheSamePicture(t *testing.T) {
 		t.Error("stalled and idle render identically without colour")
 	}
 }
+
+// A cpu row and a token row must put their state word in the same column. They
+// did not: the gap before the token rate was an accident of %5.1f
+// right-alignment, so cpu rows had no separator and everything after them sat
+// two columns left. The separator is explicit now; this holds it there.
+func TestStateColumnDoesNotDriftBetweenCpuAndTokenRows(t *testing.T) {
+	as := []agent.Agent{
+		{Source: agent.Claude, Model: "opus-5", Project: "orch", State: agent.Working, TokensMin: 10400},
+		{Source: agent.Cursor, Model: "cursor", Project: "orch", State: agent.Working, CPUPct: 236.1},
+		{Source: agent.Cursor, Model: "cursor2", Project: "orch", State: agent.Working, CPUPct: 3.0},
+		{Source: agent.Claude, Model: "sonnet", Project: "orch", State: agent.Working, TokensMin: 999},
+	}
+	m := model{w: 120, h: 40, agents: as, view: viewInstrument}
+	m.record(as)
+	cols := map[int]bool{}
+	for _, line := range strings.Split(stripANSI(m.View()), "\n") {
+		if i := strings.Index(line, "working"); i > 10 {
+			cols[i] = true
+		}
+	}
+	if len(cols) != 1 {
+		t.Errorf("the state column lands in %d different places: %v", len(cols), cols)
+	}
+}
