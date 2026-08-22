@@ -295,10 +295,27 @@ func (m model) cards() string {
 	var b strings.Builder
 	b.WriteString(m.header("ORCH · cards"))
 	const w = 28
-	for i, a := range m.agents {
-		if i >= 6 {
+	vis := m.visible()
+	// A card for an idle agent costs six rows to say nothing. It is not falsely
+	// calm — it is falsely PRESENT, carrying the visual weight of a working agent
+	// while conveying no reading. Idle collapses to one dim line so the cards
+	// that have something to show get the room.
+	var quiet []agent.Agent
+	shown := 0
+	for _, a := range vis {
+		if !live(a) {
+			quiet = append(quiet, a)
+		}
+	}
+	for i, a := range vis {
+		if !live(a) {
+			continue
+		}
+		if shown >= 6 {
 			break
 		}
+		shown++
+		_ = i
 		c := hue(a)
 		tl, tr, bl, br, h, v := "┌", "┐", "└", "┘", "─", "│"
 		if a.State == agent.Asks {
@@ -322,8 +339,26 @@ func (m model) cards() string {
 		b.WriteString("  " + c.Render(v) + dim.Render(pad(fmt.Sprintf(" %s · %s", a.State, short(a.Since)), w)) + c.Render(v) + "\n")
 		b.WriteString("  " + c.Render(bl+strings.Repeat(h, w)+br) + "\n\n")
 	}
+	for _, a := range quiet {
+		b.WriteString("  " + dim.Render(fmt.Sprintf("%s · %s · %s",
+			agent.Shorten(labelFor(a, m.names), 14), agent.ShortProject(a.Project, 12), a.State)) + "\n")
+	}
+	if len(quiet) > 0 {
+		b.WriteString("\n")
+	}
+	b.WriteString(more(countLive(vis), 6))
 	b.WriteString(m.footer())
 	return b.String()
+}
+
+func countLive(as []agent.Agent) int {
+	n := 0
+	for _, a := range as {
+		if live(a) {
+			n++
+		}
+	}
+	return n
 }
 
 // minimal is minimal INFORMATION, not minimal visibility. It is the strip left
