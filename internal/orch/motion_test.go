@@ -1,6 +1,9 @@
 package orch
 
 import (
+	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -138,5 +141,57 @@ func TestHistoryAdvancesWithoutRewritingThePast(t *testing.T) {
 	b := []rune(before)
 	if string(b[1:]) != string(after[:len(after)-1]) {
 		t.Errorf("a new peak rescaled the past\n  before %s\n  after  %s", before, string(after))
+	}
+}
+
+// Stripping ANSI to compare frames hides a whole dimension: a payload can be
+// recoloured every frame while its characters never change, and three rounds of
+// evidence missed exactly that. This checks colour as well as glyphs — no
+// character a reader can read may change either.
+//
+// The splash wordmark is the one exemption, by founder order: "can we make the
+// company's logo appear moving?" A wordmark carries no measurement, so shimmer
+// there cannot misreport anything.
+func TestNoDataEverChangesColourBetweenFrames(t *testing.T) {
+	lipgloss.SetColorProfile(termenv.TrueColor)
+	as := []agent.Agent{
+		{Source: agent.Claude, Model: "opus-5", Project: "orch", State: agent.Working, TokensMin: 10400},
+		{Source: agent.Cursor, Model: "cursor", Project: "mm", State: agent.Working, CPUPct: 236.1},
+	}
+	ansi := regexp.MustCompile(`\x1b\[[0-9;]*m`)
+	seg := func(s string) [][2]string {
+		var out [][2]string
+		cur := ""
+		idx := 0
+		for _, loc := range ansi.FindAllStringIndex(s, -1) {
+			if txt := s[idx:loc[0]]; txt != "" {
+				out = append(out, [2]string{cur, txt})
+			}
+			cur = s[loc[0]:loc[1]]
+			idx = loc[1]
+		}
+		if txt := s[idx:]; txt != "" {
+			out = append(out, [2]string{cur, txt})
+		}
+		return out
+	}
+	for _, v := range []view{viewMarks, viewInstrument, viewWaveform, viewCards, viewMinimal} {
+		m := model{w: 100, h: 40, agents: as, view: v}
+		m.record(as)
+		m.frame = 0
+		a := seg(m.View())
+		m.frame = 6
+		b := seg(m.View())
+		for i := range a {
+			if i >= len(b) {
+				break
+			}
+			if a[i][1] != b[i][1] || a[i][0] == b[i][0] {
+				continue
+			}
+			if strings.ContainsFunc(a[i][1], func(r rune) bool { return r >= '0' && r <= '9' }) {
+				t.Errorf("%s recolours a payload between frames: %q", v, strings.TrimSpace(a[i][1]))
+			}
+		}
 	}
 }
