@@ -66,8 +66,22 @@ func Look(subject []string, frames int, limit int) (Report, error) {
 			Verdict:  Agrees,
 		}
 		if len(payload) > 0 {
-			m.Verdict = Disagrees
-			m.Why = "a payload character moved: " + describe(payload)
+			// A moving digit has two possible causes and this tool must not pick
+			// the flattering one. Either the subject animates a payload, which is
+			// a defect — or the subject was never frozen and the digit is new
+			// data, which makes the MEASUREMENT unsound rather than the subject.
+			// Four times in one night the instrument was the thing that was
+			// wrong here, so it is checked before the subject is accused.
+			if !frozen(subject) {
+				m.Verdict = Unmeasured
+				m.Why = "a payload moved (" + describe(payload) + "), but two runs of this subject " +
+					"differ on their own — so this cannot tell animation from new data. Freeze it and ask again."
+				r.Unmeasured = append(r.Unmeasured,
+					"motion — the subject is not reproducible, so no motion claim can be made about it")
+			} else {
+				m.Verdict = Disagrees
+				m.Why = "a payload character moved: " + describe(payload)
+			}
 		}
 		r.Claims = append(r.Claims, m)
 		if os.Getenv("ORCH_FIXTURE") == "" {
@@ -84,6 +98,21 @@ func Look(subject []string, frames int, limit int) (Report, error) {
 		r.Unmeasured = append(r.Unmeasured, "width — no limit was given, so nothing was checked against one")
 	}
 	return r, nil
+}
+
+// frozen asks the subject the SAME question twice, at the same frame, and sees
+// whether it gives the same answer. A subject that disagrees with itself cannot
+// be measured for motion — any difference between frames is already
+// unexplained, and reporting it as animation would be the instrument accusing
+// the subject of the instrument's own fault.
+func frozen(subject []string) bool {
+	shot := func() string {
+		c := exec.Command(subject[0], subject[1:]...)
+		c.Env = append(os.Environ(), "ORCH_FRAME=0")
+		out, _ := c.Output()
+		return Strip(string(out))
+	}
+	return shot() == shot()
 }
 
 func describe(p [][2]rune) string {
