@@ -566,9 +566,28 @@ func frameFromEnv() int {
 	return n
 }
 
+// fixtureAgents is a frozen board. Motion evidence captured from live data is
+// worthless: each snapshot is a new process that re-reads cpu and token rates,
+// so the numbers move between captures for reasons that have nothing to do with
+// animation. With a fixture, anything that differs between two frames is the
+// animation and nothing else.
+func fixtureAgents() []agent.Agent {
+	return []agent.Agent{
+		{Source: agent.Claude, Model: "opus-5", Project: "orch", State: agent.Working, TokensMin: 10400},
+		{Source: agent.Cursor, Model: "cursor", Project: "manymoats", State: agent.Working, CPUPct: 236.1},
+		{Source: agent.Ollama, Model: "big", Project: "manymoats", State: agent.Idle},
+	}
+}
+
 func snapshot(v view) int {
 	m := model{w: 80, h: 40, view: v, names: namesFromEnv(), showHost: os.Getenv("ORCH_HOST") != "", frame: frameFromEnv()}
 	agent.SetAmbiguousWide(probeAmbiguousWide())
+	if os.Getenv("ORCH_FIXTURE") != "" {
+		m.agents = fixtureAgents()
+		m.gotData = true
+		fmt.Print(m.View())
+		return 0
+	}
 	switch v := refresh().(type) {
 	case []agent.Agent:
 		m.agents = v
