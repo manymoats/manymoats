@@ -1,3 +1,5 @@
+// Package first is the first run of the main binary: the house splash, one
+// question about updates, and `manymoats update`. The word is manymoats.
 package first
 
 import (
