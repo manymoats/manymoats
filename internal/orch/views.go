@@ -206,7 +206,7 @@ func plural(n int, one, many string) string {
 
 func (m model) instrument() string {
 	var b strings.Builder
-	b.WriteString(m.header("ORCH · instrument"))
+	b.WriteString(m.header("instrument"))
 	vis := m.visible()
 	mw, pw := colWidths(vis, m.names)
 	for i, a := range vis {
@@ -257,14 +257,15 @@ func more(total, shown int) string {
 // reading arrives — the past holds still, because the past is fixed.
 func trace(h []float64, _ int, _ bool) string {
 	const cells = 26
-	glyphs := []rune("⣀⣄⣤⣦⣶⣷⣿")
+	glyphs := waveBars
 	if len(h) == 0 {
-		return strings.Repeat("·", cells)
+		return strings.Repeat("░", cells)
 	}
 	var s strings.Builder
-	// Not yet a full window: the empty part reads as "no reading yet", not zero.
+	// Not yet a full window: the empty part is the same empty cell the meter
+	// uses. A row of · looked broken on the Mac mono that ships with Terminal.
 	for i := 0; i < cells-len(h); i++ {
-		s.WriteRune('·')
+		s.WriteRune('░')
 	}
 	for n, v := range h {
 		// A window-relative scale would redraw every historical cell the moment a
@@ -284,6 +285,28 @@ func trace(h []float64, _ int, _ bool) string {
 	return s.String()
 }
 
+// waveBars is the waveform alphabet. Same block cells the meter already uses,
+// which default Mac mono has. A leading space punched holes that read as a
+// broken render. There is no sine-wave toy here — the shape is recorded history.
+var waveBars = []rune("▁▂▃▅█")
+
+func liveBar(frame int) string {
+	return string(waveBars[1+(frame/2)%(len(waveBars)-1)])
+}
+
+func liveTrace(h []float64, frame int, alive bool) string {
+	s := trace(h, frame, alive)
+	if !alive {
+		return s
+	}
+	r := []rune(s)
+	if len(r) == 0 {
+		return liveBar(frame)
+	}
+	r[len(r)-1] = []rune(liveBar(frame))[0]
+	return string(r)
+}
+
 // traceLevel maps a rate to a glyph index on a FIXED log scale — the same
 // 50k/min ceiling meterFor uses. Fixed is what makes recorded history stable.
 func traceLevel(v float64, levels int) int {
@@ -297,27 +320,9 @@ func traceLevel(v float64, levels int) int {
 	return f
 }
 
-func wave(frame, seed int, amp float64) string {
-	const glyphs = "⣀⣄⣤⣦⣶⣷⣿"
-	r := []rune(glyphs)
-	var s strings.Builder
-	for x := 0; x < 26; x++ {
-		v := (math.Sin(float64(x)*0.42+float64(frame)*0.3+float64(seed)) + 1) / 2
-		i := int(v * amp)
-		if i > 6 {
-			i = 6
-		}
-		if i < 0 {
-			i = 0
-		}
-		s.WriteRune(r[i])
-	}
-	return s.String()
-}
-
 func (m model) waveform() string {
 	var b strings.Builder
-	b.WriteString(m.header("ORCH · waveform"))
+	b.WriteString(m.header("waveform"))
 	vis := m.visible()
 	for i, a := range vis {
 		if i >= 6 {
@@ -332,12 +337,13 @@ func (m model) waveform() string {
 		}
 		if live(a) && a.TokensMin > 0 {
 			_, val := Reading(a)
-			b.WriteString("  " + c.Render(trace(m.history[a.ID], m.frame, live(a))) + "  " + dim.Render(val) + "\n\n")
+			b.WriteString("  " + c.Render(liveTrace(m.history[a.ID], m.frame, true)) + "  " + dim.Render(val) + "\n\n")
 		} else if live(a) {
-			// Cursor and the local models expose no token rate. A wave here would
-			// be a picture of a number nobody measured.
+			// Cursor and the local models expose no token rate. The shape stays
+			// dots (nothing was measured); the last cell is the pulse so the
+			// line is still alive.
 			_, val := Reading(a)
-			b.WriteString("  " + dim.Render(strings.Repeat("·", 26)) + "  " + dim.Render(val) + "\n\n")
+			b.WriteString("  " + dim.Render(strings.Repeat("░", 25)+liveBar(m.frame)) + "  " + dim.Render(val) + "\n\n")
 		} else {
 			b.WriteString("  " + dim.Render(strings.Repeat("─", 26)+"  "+a.State.String()) + "\n\n")
 		}
@@ -349,7 +355,7 @@ func (m model) waveform() string {
 
 func (m model) cards() string {
 	var b strings.Builder
-	b.WriteString(m.header("ORCH · cards"))
+	b.WriteString(m.header("cards"))
 	const w = 28
 	vis := m.visible()
 	// A card for an idle agent costs six rows to say nothing. It is not falsely
@@ -388,7 +394,7 @@ func (m model) cards() string {
 			b.WriteString("  " + c.Render(v) + inverted(a, pad(" WAITING ON YOU", w)) + c.Render(v) + "\n")
 		} else {
 			bar, val := Reading(a)
-			line := fmt.Sprintf(" %s  %s", c.Render(bar), val)
+			line := fmt.Sprintf(" %s  %s %s", c.Render(bar), val, liveBar(m.frame))
 			b.WriteString("  " + c.Render(v) + pad(line, w) + c.Render(v) + "\n")
 		}
 		b.WriteString("  " + c.Render(v) + dim.Render(pad(fmt.Sprintf(" %s · %s", a.State, short(a.Since)), w)) + c.Render(v) + "\n")
@@ -506,17 +512,6 @@ func rate(tpm float64) string {
 	default:
 		return fmt.Sprintf("%6.0f", tpm)
 	}
-}
-
-func waveAmp(tokensPerMin float64) float64 {
-	if tokensPerMin <= 0 {
-		return 0.4
-	}
-	a := 1 + 5*(tokensPerMin/20000)
-	if a > 6 {
-		a = 6
-	}
-	return a
 }
 
 func labelFor(a agent.Agent, mode agent.NameMode) string {

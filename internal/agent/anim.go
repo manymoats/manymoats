@@ -43,18 +43,6 @@ func Woken(x, lead int, fadeCells int) float64 {
 	return Silk(p)
 }
 
-// Ramp picks a shade from the silver ramp by intensity.
-func Ramp(intensity float64) string {
-	if intensity <= 0 {
-		return "#232a33"
-	}
-	i := int(intensity * float64(len(Silver)-1))
-	if i >= len(Silver) {
-		i = len(Silver) - 1
-	}
-	return Silver[i]
-}
-
 // SilkInOut — symmetric, cubic. A sweep is a head turning: slow at the edges,
 // quick through the middle, but MOVING the whole time. Plain Silk is an ease-OUT
 // and lurches to 95% by t=0.45. An exponential in-out is the opposite failure —

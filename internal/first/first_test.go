@@ -195,8 +195,8 @@ func TestAppIsSmallAndDoesNotReplayTheMovie(t *testing.T) {
 	if !strings.Contains(got, credit) {
 		t.Fatal("the smaller hello must finish with the credit")
 	}
-	if strings.Contains(got, "▟█████▙") {
-		t.Fatal("a sub-app must not play the tall movie")
+	if strings.Contains(got, "▟█████▙") || strings.Contains(got, "▟◉█▙") {
+		t.Fatal("a sub-app must not draw the tower")
 	}
 	if Has("main") {
 		t.Fatal("a sub-app must not spend the main splash")
@@ -239,6 +239,9 @@ func TestSplashLastFrameIsTheNameAndCredit(t *testing.T) {
 	}
 	if strings.Contains(got, "ORCH") || strings.Contains(got, "O R C H") {
 		t.Fatal("the front door hero is manymoats, not orch")
+	}
+	if strings.Contains(got, "▟█████▙") || strings.Contains(got, "◉") {
+		t.Fatal("the house door is the word, not the tower")
 	}
 }
 

@@ -75,8 +75,9 @@ func Paying(src Source, model, entrypoint string) (pot string, free bool) {
 // Disambiguate gives a short, stable tag to agents that would otherwise render
 // identically. Same model + same project + same state is indistinguishable on a
 // board, which makes the board useless for the thing it exists to do.
-// RollUpSubagents folds sidechain sessions into their parent as a count. A
-// subagent is not a peer on the board — it is work the parent is doing.
+// RollUpSubagents folds quiet sidechain sessions into their parent as a
+// count. A working or asking subagent stays on the board — folding it into
+// a parent that is itself idle made live work invisible.
 func RollUpSubagents(as []Agent) []Agent {
 	kids := map[string]int{}
 	for _, a := range as {
@@ -86,10 +87,12 @@ func RollUpSubagents(as []Agent) []Agent {
 	}
 	var out []Agent
 	for _, a := range as {
-		if a.Sidechain {
+		if a.Sidechain && a.State != Working && a.State != Asks {
 			continue
 		}
-		a.Subagents = kids[a.Project]
+		if !a.Sidechain {
+			a.Subagents = kids[a.Project]
+		}
 		out = append(out, a)
 	}
 	return out
@@ -125,6 +128,9 @@ func Disambiguate(as []Agent) {
 	}
 }
 
+// Classify decides what a session is doing. alive is a live process for
+// this session. No process → Idle, never Stalled. Stalled is only a
+// process that is still running and has gone quiet.
 func Classify(lastTurn string, endsQuestion bool, pendingPrompt bool, idle time.Duration, alive bool) State {
 	switch {
 	case !alive:

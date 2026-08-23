@@ -38,6 +38,54 @@ func TestNerdGlyphsStayInThePatchedRanges(t *testing.T) {
 	}
 }
 
+func TestALinuxFontDirCounts(t *testing.T) {
+	d := t.TempDir()
+	t.Setenv("HOME", d)
+	fonts := filepath.Join(d, ".local", "share", "fonts", "truetype")
+	if err := os.MkdirAll(fonts, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if NerdFontInstalled() {
+		t.Fatal("empty linux font dir must report false")
+	}
+	os.WriteFile(filepath.Join(fonts, "JetBrainsMonoNerdFont-Regular.ttf"), []byte("x"), 0o644)
+	if !NerdFontInstalled() {
+		t.Fatal("a Nerd Font under ~/.local/share/fonts must count")
+	}
+}
+
+func TestUseNerdDefaultsOffAndIsNeverInferredFromAFontFile(t *testing.T) {
+	d := t.TempDir()
+	t.Setenv("HOME", d)
+	t.Setenv("ORCH_ICONS", "")
+	if UseNerd() {
+		t.Fatal("nerd is opt-in — default is off")
+	}
+	fonts := filepath.Join(d, "Library", "Fonts")
+	if err := os.MkdirAll(fonts, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	os.WriteFile(filepath.Join(fonts, "JetBrainsMonoNerdFont-Regular.ttf"), []byte("x"), 0o644)
+	if !NerdFontInstalled() {
+		t.Fatal("the file is there")
+	}
+	if UseNerd() {
+		t.Fatal("a font file on disk is not a yes — Cursor will tofu")
+	}
+}
+
+func TestNerdOverlayRefusesEmoji(t *testing.T) {
+	if nerdGlyphOK("🦙") {
+		t.Fatal("an emoji must not be treated as a usable nerd glyph")
+	}
+	if nerdGlyphOK("✶") {
+		t.Fatal("a unicode mark is not a nerd glyph — that path is PUA only")
+	}
+	if !nerdGlyphOK("\uF111") {
+		t.Fatal("a 1-cell PUA circle must be accepted")
+	}
+}
+
 func nerdMarks(t *testing.T) []Mark {
 	t.Helper()
 	var ms []Mark

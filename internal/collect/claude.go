@@ -3,6 +3,7 @@ package collect
 import (
 	"bufio"
 	"encoding/json"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -67,9 +68,95 @@ func endsWithQuestion(content any) bool {
 	return strings.HasSuffix(text, "?")
 }
 
-func ClaudeSessions(root string, live map[int]bool) ([]agent.Agent, error) {
-	pattern := filepath.Join(root, "*", "*.jsonl")
-	paths, err := filepath.Glob(pattern)
+// ClaudeProjectRoots returns every transcript root we can verify exists.
+//
+// Official (code.claude.com/docs/en/sessions, /docs/en/claude-directory):
+//   - ~/.claude/projects
+//   - $CLAUDE_CONFIG_DIR/projects when that env is set
+//
+// Community-reported second home (better-ccusage; Claude Code issue comments):
+//   - ~/.config/claude/projects
+//
+// Not collected — looked for, not verified as a Claude Design store, or not
+// the same JSONL:
+//   - ~/.claude.jsonl (does not appear in official docs; official neighbour
+//     is ~/.claude.json, which is app state, not a transcript)
+//   - ~/Library/Application Support/Claude/claude-code-sessions
+//     and local-agent-mode-sessions (Desktop/Cowork metadata or audit.jsonl,
+//     different shape)
+//   - A distinct "Claude Design" path: none found in public docs.
+func ClaudeProjectRoots() []string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil
+	}
+	var roots []string
+	seen := map[string]bool{}
+	add := func(p string) {
+		if p == "" {
+			return
+		}
+		p = filepath.Clean(p)
+		if seen[p] {
+			return
+		}
+		if st, err := os.Stat(p); err != nil || !st.IsDir() {
+			return
+		}
+		seen[p] = true
+		roots = append(roots, p)
+	}
+	if d := strings.TrimSpace(os.Getenv("CLAUDE_CONFIG_DIR")); d != "" {
+		add(filepath.Join(d, "projects"))
+	}
+	add(filepath.Join(home, ".claude", "projects"))
+	add(filepath.Join(home, ".config", "claude", "projects"))
+	return roots
+}
+
+// ClaudeAll reads every verified projects root. live keys are session IDs
+// and/or process working directories; an empty/nil map means no live Claude.
+func ClaudeAll(live map[string]bool) ([]agent.Agent, error) {
+	var out []agent.Agent
+	seen := map[string]bool{}
+	for _, root := range ClaudeProjectRoots() {
+		as, err := ClaudeSessions(root, live)
+		if err != nil {
+			return nil, err
+		}
+		for _, a := range as {
+			key := a.ID
+			if key == "" {
+				key = string(a.Source) + "\x00" + a.Project + "\x00" + a.Model + "\x00" + a.Since.String()
+			}
+			if seen[key] {
+				continue
+			}
+			seen[key] = true
+			out = append(out, a)
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Since < out[j].Since })
+	agent.Disambiguate(out)
+	return out, nil
+}
+
+// ClaudeSessions reads Claude Code JSONL under root.
+//
+// Official layout (code.claude.com/docs/en/claude-directory):
+//
+//	<projects>/<slug>/<session-id>.jsonl
+//	<projects>/<slug>/<session-id>/subagents/*.jsonl
+//
+// The old glob was one directory deep, so a working subagent never reached
+// the board. We walk the tree and skip official non-transcript dirs
+// (memory/, tool-results/). A file that does not parse as a session is
+// dropped, same as before.
+//
+// live is cwd and/or session ID → true. Nil or empty means no live Claude
+// process: those sessions are Idle, never Stalled.
+func ClaudeSessions(root string, live map[string]bool) ([]agent.Agent, error) {
+	paths, err := claudeJSONL(root)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +228,7 @@ func ClaudeSessions(root string, live map[int]bool) ([]agent.Agent, error) {
 		if span := lastTS.Sub(firstTS).Minutes(); span > 0.05 && outTok > 0 {
 			tpm = outTok / span
 		}
-		st8 := agent.Classify(last.Type, endsWithQuestion(last.Message.Content), false, idle, true)
+		st8 := agent.Classify(last.Type, endsWithQuestion(last.Message.Content), false, idle, sessionAlive(cwd, last.SessionID, live))
 		out = append(out, agent.Agent{
 			ID:        last.SessionID,
 			Source:    agent.Claude,
@@ -151,11 +238,56 @@ func ClaudeSessions(root string, live map[int]bool) ([]agent.Agent, error) {
 			Since:     idle,
 			CacheHit:  cache,
 			TokensMin: tpm,
-			Sidechain: sidechain,
+			Sidechain: sidechain || isSubagentPath(p),
 			Effort:    effort,
 		})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Since < out[j].Since })
 	agent.Disambiguate(out)
 	return out, nil
+}
+
+func sessionAlive(cwd, id string, live map[string]bool) bool {
+	if len(live) == 0 {
+		return false
+	}
+	if id != "" && live[id] {
+		return true
+	}
+	return cwd != "" && live[cwd]
+}
+
+func isSubagentPath(p string) bool {
+	return strings.Contains(filepath.ToSlash(p), "/subagents/")
+}
+
+func claudeJSONL(root string) ([]string, error) {
+	if root == "" {
+		return nil, nil
+	}
+	if _, err := os.Stat(root); err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	var paths []string
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+		if d.IsDir() {
+			switch d.Name() {
+			case "memory", "tool-results":
+				return fs.SkipDir
+			}
+			return nil
+		}
+		if !strings.HasSuffix(d.Name(), ".jsonl") {
+			return nil
+		}
+		paths = append(paths, path)
+		return nil
+	})
+	return paths, err
 }
