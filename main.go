@@ -8,6 +8,7 @@ import (
 	"github.com/manymoats/manymoats/internal/agents"
 	"github.com/manymoats/manymoats/internal/eyes"
 	"github.com/manymoats/manymoats/internal/fc"
+	"github.com/manymoats/manymoats/internal/first"
 	"github.com/manymoats/manymoats/internal/launcher"
 	"github.com/manymoats/manymoats/internal/orch"
 	"github.com/manymoats/manymoats/internal/version"
@@ -40,6 +41,32 @@ func normalise(args []string, all []launcher.App) []string {
 	return args
 }
 
+// skipNoAnim is only for deciding which command this is. A lone --no-anim is
+// the directory, with motion off. It must not eat --no-anim meant for orch.
+func skipNoAnim(args []string) []string {
+	out := make([]string, 0, len(args))
+	for _, a := range args {
+		if a == "--no-anim" {
+			continue
+		}
+		out = append(out, a)
+	}
+	return out
+}
+
+func afterApp(args []string, name string) []string {
+	out := make([]string, 0, len(args))
+	found := false
+	for _, a := range args {
+		if !found && (a == name || a == "--"+name) {
+			found = true
+			continue
+		}
+		out = append(out, a)
+	}
+	return out
+}
+
 func main() {
 	if os.Getenv("NO_COLOR") == "" {
 		lipgloss.SetColorProfile(termenv.TrueColor)
@@ -48,23 +75,27 @@ func main() {
 	args := os.Args[1:]
 
 	args = normalise(args, all)
+	cmd := skipNoAnim(args)
 
-	if len(args) == 0 {
+	if len(cmd) == 0 {
+		first.Hello(first.Real())
 		fmt.Print(launcher.Directory(all))
 		return
 	}
 
-	switch args[0] {
+	switch cmd[0] {
 	case "-v", "--version", "version":
 		fmt.Println("manymoats " + version.V)
 		return
 	case "-h", "--help", "help":
 		fmt.Print(launcher.Directory(all))
 		return
+	case "update":
+		os.Exit(first.Update(first.Real()))
 	}
 
 	for _, a := range all {
-		if a.Name != args[0] {
+		if a.Name != cmd[0] {
 			continue
 		}
 		if !a.Ready || a.Run == nil {
@@ -72,11 +103,13 @@ func main() {
 			os.Exit(1)
 		}
 		// Drop the subcommand so the app sees its own flags at the position it
-		// expects, exactly as if it had been invoked directly.
-		os.Args = append([]string{os.Args[0] + " " + a.Name}, args[1:]...)
+		// expects, exactly as if it had been invoked directly. --no-anim stays;
+		// orch already reads it, and stripping it here made the flag a lie.
+		os.Args = append([]string{os.Args[0] + " " + a.Name}, afterApp(args, a.Name)...)
+		first.App(first.Real())
 		os.Exit(a.Run())
 	}
 
-	fmt.Print(launcher.Unknown(args[0], all))
+	fmt.Print(launcher.Unknown(cmd[0], all))
 	os.Exit(1)
 }
