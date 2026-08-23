@@ -55,26 +55,64 @@ func UseNerd() bool {
 // version looked only for the symbols-only build and reported "false" on a
 // machine that had JetBrainsMono Nerd Font sitting right there.
 func NerdFontInstalled() bool {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return false
-	}
-	for _, dir := range []string{
-		filepath.Join(home, "Library", "Fonts"),
-		"/Library/Fonts",
-	} {
-		ents, err := os.ReadDir(dir)
-		if err != nil {
-			continue
-		}
-		for _, e := range ents {
-			n := strings.ToLower(e.Name())
-			if strings.Contains(n, "nerdfont") || strings.Contains(n, "nerd font") {
-				return true
-			}
+	for _, dir := range nerdFontDirs() {
+		if fontDirHasNerd(dir, 0) {
+			return true
 		}
 	}
 	return false
+}
+
+func nerdFontDirs() []string {
+	home, _ := os.UserHomeDir()
+	dirs := []string{
+		"/Library/Fonts",
+		"/usr/local/share/fonts",
+		"/usr/share/fonts",
+	}
+	if home != "" {
+		dirs = append([]string{
+			filepath.Join(home, "Library", "Fonts"),
+			filepath.Join(home, ".local", "share", "fonts"),
+			filepath.Join(home, ".fonts"),
+			filepath.Join(home, "AppData", "Local", "Microsoft", "Windows", "Fonts"),
+		}, dirs...)
+	}
+	return dirs
+}
+
+func fontDirHasNerd(dir string, depth int) bool {
+	if depth > 4 {
+		return false
+	}
+	ents, err := os.ReadDir(dir)
+	if err != nil {
+		return false
+	}
+	for _, e := range ents {
+		n := strings.ToLower(e.Name())
+		if strings.Contains(n, "nerdfont") || strings.Contains(n, "nerd font") ||
+			strings.Contains(n, "nerd-font") || strings.Contains(n, " nfm") {
+			return true
+		}
+		if e.IsDir() && fontDirHasNerd(filepath.Join(dir, e.Name()), depth+1) {
+			return true
+		}
+	}
+	return false
+}
+
+func nerdGlyphOK(g string) bool {
+	if g == "" || !GlyphFits(g) {
+		return false
+	}
+	for _, r := range g {
+		inPUA := (r >= 0xE000 && r <= 0xF8FF) || (r >= 0xF0000 && r <= 0xFFFFD)
+		if !inPUA {
+			return false
+		}
+	}
+	return true
 }
 
 type Mark struct {
@@ -108,7 +146,7 @@ func load() {
 				over[n.ID] = n
 			}
 			for i, m := range list {
-				if n, ok := over[m.ID]; ok {
+				if n, ok := over[m.ID]; ok && nerdGlyphOK(n.Glyph) {
 					list[i].Glyph = n.Glyph
 					// Big() reads Mid. Leaving it on the unicode set meant the
 					// splash and the board showed the same source two ways.

@@ -31,27 +31,44 @@ func AmbiguousWide() bool {
 // Render is the board icon: the glyph itself, nothing around it. Frames were
 // decoration, not size.
 func (m Mark) Render() (top, mid, bot string) {
-	if AmbiguousWide() {
-		return "", m.ASCII, ""
-	}
-	return "", m.Glyph, ""
+	return "", m.safe(m.Glyph), ""
 }
 
 // Tiny is the one-cell form, for legends and the minimal strip.
 func (m Mark) Tiny() string {
-	if AmbiguousWide() {
-		return m.ASCII
-	}
-	return m.Glyph
+	return m.safe(m.Glyph)
 }
 
 func (m Mark) Big() (top, mid, bot string) {
 	if AmbiguousWide() {
 		return "", m.ASCII, ""
 	}
-	return m.Top, m.Mid, m.Bot
+	mid = m.safe(m.Mid)
+	if mid == m.ASCII {
+		return "", m.ASCII, ""
+	}
+	return m.Top, mid, m.Bot
+}
+
+// safe never emits a glyph that will take the wrong number of cells. A Nerd
+// Font PUA that the terminal cannot see still reports as width 1, so we also
+// refuse anything that is not a single cell, and we refuse when the locale
+// treats the mark as wide. ASCII is the honest leftover.
+func (m Mark) safe(g string) string {
+	if AmbiguousWide() {
+		return m.ASCII
+	}
+	if g == "" || !GlyphFits(g) {
+		return m.ASCII
+	}
+	return g
 }
 
 func Width(s string) int { return runewidth.StringWidth(s) }
 
-func GlyphFits(s string) bool { return runewidth.StringWidth(s) == len([]rune(s)) }
+func GlyphFits(s string) bool {
+	if s == "" {
+		return false
+	}
+	return runewidth.StringWidth(s) == len([]rune(s))
+}

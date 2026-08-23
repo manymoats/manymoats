@@ -176,12 +176,12 @@ func refresh() tea.Msg {
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch v := msg.(type) {
 	case tea.KeyMsg:
-		if m.view == viewAnim {
+		if m.view == viewAnim || m.view == viewSplash {
 			s := v.String()
 			if s == "ctrl+c" {
 				return m, tea.Quit
 			}
-			if m.animLong {
+			if m.view == viewAnim && m.animLong {
 				markSeen()
 			}
 			m.view = viewMarks
@@ -443,7 +443,7 @@ func (m model) View() string {
 // the colour tells you where without reading a word.
 func (m model) marks() string {
 	var b strings.Builder
-	b.WriteString(m.header("ORCH"))
+	b.WriteString(m.header("orch"))
 	vis := m.visible()
 	single := agent.SingleProject(vis)
 	order, byProject := agent.GroupByProject(vis)
@@ -569,28 +569,24 @@ func namesFromEnv() agent.NameMode {
 // animFrames prints the long cut as still frames so it can be reviewed without a
 // terminal — the same reason --snapshot exists.
 func animFrames(long bool, n int) int {
-	total := shortMS
-	if long {
-		total = longMS
-	}
-	m := model{w: 80, h: 40, view: viewAnim, animLong: long, names: namesFromEnv()}
-	switch v := refresh().(type) {
-	case []agent.Agent:
-		m.agents = v
+	if n < 1 {
+		n = 8
 	}
 	for i := 0; i <= n; i++ {
-		m.animElapsed = total * i / n
-		m.frame = i
-		fmt.Printf("\n── %4dms ─────────────────────────────────────\n%s", m.animElapsed, m.animView())
+		var f int
+		if long {
+			f = 31 * i / n
+		} else {
+			f = 24 + 7*i/n
+		}
+		fmt.Printf("\n── frame %02d ─────────────────────────────────────\n%s", f+1, RenderCut(f, 80, 40))
 	}
 	return 0
 }
 
-var plainGlyph = map[string]string{"claude": "✶", "openai": "⊛", "cursor": "◧", "gemini": "◆", "qwen": "◪", "grok": "⊗", "ollama": "◉", "openrouter": "◈", "deepseek": "⊙", "moonshot": "○", "copilot": "●", "terminal": "❯"}
-
 // printIcons exists because the desk cannot see whether a Nerd Font renders on
-// your machine — only you can. This shows both sets side by side so the choice
-// is made by looking, not by guessing.
+// your machine — only you can. Tool icons (play, folder, pulse) may be Nerd
+// Font. Provider marks stay unicode so they never tofu.
 func setIcons(on bool) int {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -616,27 +612,26 @@ func setIcons(on bool) int {
 func printIcons() {
 	fmt.Printf("\n  Nerd Font file installed: %v\n", agent.NerdFontInstalled())
 	fmt.Printf("  Icons currently: %s\n", map[bool]string{true: "nerd", false: "plain"}[agent.UseNerd()])
-	fmt.Println("\n  nerd   plain   provider")
-	fmt.Println("  ─────────────────────────")
-	os.Setenv("ORCH_ICONS", "nerd")
-	nerd := map[string]string{}
-	for _, m := range agent.AllMarks() {
-		nerd[m.ID] = m.Glyph
+	fmt.Println("\n  tool     nerd   ascii")
+	fmt.Println("  ─────────────────────")
+	for _, ic := range agent.AllToolIcons() {
+		shown := ic.ASCII
+		if agent.UseNerd() && agent.NerdFontInstalled() && agent.GlyphFits(ic.Nerd) {
+			shown = ic.Nerd
+		}
+		fmt.Printf("  %-8s %s      %s\n", ic.Name, shown, ic.ASCII)
 	}
-	for _, id := range []string{"claude", "openai", "cursor", "gemini", "qwen", "grok",
-		"ollama", "openrouter", "deepseek", "moonshot", "copilot", "terminal"} {
-		fmt.Printf("    %s      %s     %s\n", nerd[id], plainGlyph[id], id)
-	}
+	fmt.Println("\n  Providers stay on unicode shapes (✶ ◧ ◆). Those always draw.")
+	fmt.Println("  A boxed nerd glyph is a defect — we print the ascii instead.")
 	fmt.Println()
-	if agent.NerdFontInstalled() {
-		fmt.Println("  Blank or boxed nerd column? The font is installed but your")
-		fmt.Println("  terminal is not using it. Terminals built on xterm.js (Cursor,")
-		fmt.Println("  VS Code) do not inherit macOS font fallback — you must name it.")
-		fmt.Println()
-		fmt.Println("  In Cursor: Settings → search \"terminal font family\" → set")
-		fmt.Println("    Menlo, \"Symbols Nerd Font Mono\", monospace")
-		fmt.Println()
-		fmt.Println("  Then:  ORCH_ICONS=nerd orch")
+	if agent.NerdFontInstalled() && !agent.UseNerd() {
+		fmt.Println("  Font is on disk. Turn icons on:  orch --icons-on")
+		fmt.Println("  (or ORCH_ICONS=nerd). The terminal font must name it:")
+		fmt.Println("    JetBrainsMono Nerd Font Mono")
+	}
+	if !agent.NerdFontInstalled() {
+		fmt.Println("  No Nerd Font on disk. orch keeps using ascii/unicode.")
+		fmt.Println("  orch setup can install JetBrainsMono Nerd Font.")
 	}
 	fmt.Println()
 }
@@ -667,6 +662,14 @@ func fixtureAgents() []agent.Agent {
 
 func snapshot(v view) int {
 	m := model{w: 80, h: 40, view: v, names: namesFromEnv(), showHost: os.Getenv("ORCH_HOST") != "", frame: frameFromEnv()}
+	if v == viewAnim {
+		m.animLong = true
+		if os.Getenv("ORCH_FRAME") == "" {
+			m.animElapsed = longMS
+		} else {
+			m.animElapsed = frameFromEnv() * frameMS
+		}
+	}
 	agent.SetAmbiguousWide(probeAmbiguousWide())
 	if os.Getenv("ORCH_FIXTURE") != "" {
 		m.agents = fixtureAgents()
@@ -759,7 +762,12 @@ func Main() int {
 	} else {
 		// A run nobody watched must NOT consume the first-run animation. Marking it
 		// here burned the once-ever cut on every piped/snapshot invocation.
-		start.view = viewMarks
+		// A pipe or CI prints the last still and leaves — tea would wait on a key.
+		if !stdoutTTY() || os.Getenv("CI") != "" {
+			printLastStill()
+			return 0
+		}
+		start.view = viewSplash
 	}
 	p := tea.NewProgram(start)
 	if _, err := p.Run(); err != nil {

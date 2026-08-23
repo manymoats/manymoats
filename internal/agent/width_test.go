@@ -34,6 +34,47 @@ func TestEveryMarkHasAnASCIIFallback(t *testing.T) {
 	}
 }
 
+func TestAWideGlyphFallsBackToASCII(t *testing.T) {
+	SetAmbiguousWide(false)
+	m := Mark{Glyph: "🦙", ASCII: "*", Mid: "🦙"}
+	if _, mid, _ := m.Render(); mid != "*" {
+		t.Fatalf("a 2-cell emoji must fall back to ASCII, got %q", mid)
+	}
+	if m.Tiny() != "*" {
+		t.Fatalf("Tiny must fall back too, got %q", m.Tiny())
+	}
+	if Width("🦙") != 2 {
+		t.Fatalf("llama is two cells, got %d — cells are not bytes", Width("🦙"))
+	}
+	if GlyphFits("🦙") {
+		t.Fatal("a 2-cell glyph must not be called a fit")
+	}
+	if !GlyphFits("*") {
+		t.Fatal("ASCII star is one cell")
+	}
+	if !GlyphFits("▁") {
+		t.Fatal("waveform bars must be one cell or the board will drift")
+	}
+}
+
+func TestToolIconsAreHonestWhenNerdIsOff(t *testing.T) {
+	t.Setenv("ORCH_ICONS", "plain")
+	resetMarks()
+	defer func() { t.Setenv("ORCH_ICONS", ""); resetMarks() }()
+	if got := Icon("play"); got != ">" {
+		t.Fatalf("without nerd, play is >, got %q", got)
+	}
+	if got := Icon("check"); got != "ok" {
+		t.Fatalf("without nerd, check is ok, got %q", got)
+	}
+	for _, ic := range AllToolIcons() {
+		g := Icon(ic.Name)
+		if !GlyphFits(g) && Width(g) > 2 {
+			t.Errorf("%s fallback %q is too wide (%d cells)", ic.Name, g, Width(g))
+		}
+	}
+}
+
 func TestAmbiguousGlyphsAreKnownRisky(t *testing.T) {
 	risky := map[Source]string{Qwen: "⬡", Cursor: "◱", Ollama: "◉", Grok: "╳"}
 	for src, g := range risky {

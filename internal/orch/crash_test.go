@@ -265,7 +265,12 @@ func TestWideEmojiDoesNotBreakColumns(t *testing.T) {
 func TestMakerIsAlwaysVisible(t *testing.T) {
 	as := []agent.Agent{{Source: agent.Claude, Model: "opus", Project: "kpf", State: agent.Working, TokensMin: 900}}
 	for v := viewSplash; v <= viewMinimal; v++ {
-		out := stripANSI(model{w: 110, h: 40, agents: as, view: v}.View())
+		m := model{w: 110, h: 40, agents: as, view: v}
+		if v == viewAnim {
+			m.animLong = true
+			m.animElapsed = longMS
+		}
+		out := stripANSI(m.View())
 		if !strings.Contains(out, "manymoats") {
 			t.Errorf("view %s does not carry the maker line", v)
 		}

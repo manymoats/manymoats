@@ -1,20 +1,12 @@
 package orch
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
-	"github.com/manymoats/manymoats/internal/agent"
-)
-
-const (
-	longMS  = 4200
-	shortMS = 700
-	frameMS = 40
 )
 
 type animFrame time.Time
@@ -49,10 +41,10 @@ func markSeen() {
 	_ = os.WriteFile(p, []byte(time.Now().UTC().Format(time.RFC3339)+"\n"), 0o600)
 }
 
-// motionOK is the reduced-motion gate. A non-TTY, NO_COLOR, or an explicit flag
-// gets the final frame instantly — the full picture, never a degraded one.
+// motionOK is the reduced-motion gate. A non-TTY, CI, NO_COLOR, or an explicit
+// flag gets the final frame instantly — the full picture, never a hang.
 func motionOK() bool {
-	if os.Getenv("NO_COLOR") != "" || os.Getenv("ORCH_NO_ANIM") != "" {
+	if os.Getenv("CI") != "" || os.Getenv("NO_COLOR") != "" || os.Getenv("ORCH_NO_ANIM") != "" {
 		return false
 	}
 	for _, a := range os.Args[1:] {
@@ -60,6 +52,10 @@ func motionOK() bool {
 			return false
 		}
 	}
+	return stdoutTTY()
+}
+
+func stdoutTTY() bool {
 	fi, err := os.Stdout.Stat()
 	if err != nil {
 		return false
@@ -83,38 +79,6 @@ func (m model) animProgress() float64 {
 	return float64(m.animElapsed) / total
 }
 
-// beamT maps overall progress onto the sweep's own window: the long cut builds the
-// tower first and lights the window before the beam moves at all.
-func (m model) beamT() float64 {
-	p := m.animProgress()
-	if !m.animLong {
-		return clamp01((p - 0.15) / 0.5)
-	}
-	return clamp01((p - 0.27) / 0.35)
-}
-
-func (m model) towerRows() int {
-	if !m.animLong {
-		return len(agent.Tower)
-	}
-	p := m.animProgress()
-	if p >= 0.22 {
-		return len(agent.Tower)
-	}
-	return int(agent.SilkInOut(clamp01(p/0.22)) * float64(len(agent.Tower)))
-}
-
-func (m model) windowLit() bool {
-	return !m.animLong || m.animProgress() >= 0.22
-}
-
-func (m model) wordShown() bool {
-	if !m.animLong {
-		return m.animProgress() >= 0.5
-	}
-	return m.animProgress() >= 0.62
-}
-
 func clamp01(v float64) float64 {
 	if v < 0 {
 		return 0
@@ -125,93 +89,36 @@ func clamp01(v float64) float64 {
 	return v
 }
 
-func (m model) animView() string {
-	const w = 46
-	bt := m.beamT()
-	// Before the sweep starts there is no light at all. Drawing the leading edge
-	// at column 0 makes it look like the beam is already on and stuck.
-	lead := -99
-	if bt > 0 {
-		lead = agent.BeamAt(bt, w)
-	}
-	shown := m.towerRows()
-	rows := agent.Tower
-
-	var b strings.Builder
-	b.WriteString("\n")
-	for i := range rows {
-		line := "   "
-		if len(rows)-i <= shown {
-			r := rows[i]
-			if i == 2 && !m.windowLit() {
-				r = strings.ReplaceAll(r, "◉", " ")
-			}
-			line += agent.Metal(r, m.frame, metalPaint)
-		} else {
-			line += strings.Repeat(" ", len([]rune(rows[i])))
-		}
-		line += "    "
-		if m.wordShown() {
-			switch i {
-			case 1:
-				line += agent.Metal("O R C H", m.frame, metalPaint)
-			case 2:
-				line += dim.Render("the lookout")
-			case 4:
-				line += ground.Render("by manymoats")
-			}
-		}
-		b.WriteString(strings.TrimRight(line, " ") + "\n")
-	}
-
-	// marks wake where the beam has already passed — real agents only
-	cells := make([]string, w)
-	for i := range cells {
-		cells[i] = " "
-	}
-	working := m.workingAgents()
-	for i, a := range working {
-		col := 6 + i*11
-		if col >= w {
-			break
-		}
-		if wake := agent.Woken(col, lead, 3); wake > 0 {
-			_, mid, _ := agent.MarkFor(a.Source).Big()
-			hex := agent.MarkFor(a.Source).Color
-			if wake < 0.6 {
-				hex = "#4c5865"
-			}
-			g := []rune(mid)
-			cells[col] = lipgloss.NewStyle().Foreground(lipgloss.Color(hex)).Render(string(g[len(g)/2]))
-		}
-	}
-	b.WriteString("   " + strings.Join(cells, "") + "\n")
-
-	var gr strings.Builder
-	for x := 0; x < w; x++ {
-		if in := agent.BeamWedge(x, lead); in > 0 {
-			gr.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color(agent.Ramp(in))).Render("─"))
-			continue
-		}
-		ch := " "
-		if x%4 == 0 {
-			ch = "·"
-		}
-		gr.WriteString(ground.Render(ch))
-	}
-	b.WriteString("   " + gr.String() + "\n")
+// cutIndex maps elapsed time onto the 32-frame sheet. First run plays 01–32.
+// A return visit plays the watch beat (25–32) so the door is still the picture
+// without making them sit through the chase again.
+func (m model) cutIndex() int {
+	f := m.animElapsed / frameMS
 	if m.animLong {
-		b.WriteString("\n   " + ground.Render("any key to skip") + "\n")
+		if f > 31 {
+			return 31
+		}
+		if f < 0 {
+			return 0
+		}
+		return f
 	}
-	return b.String()
+	f += 24
+	if f > 31 {
+		return 31
+	}
+	if f < 24 {
+		return 24
+	}
+	return f
 }
 
-func (m model) workingAgents() []agent.Agent {
-	var out []agent.Agent
-	for _, a := range m.agents {
-		if a.State == agent.Working || a.State == agent.Asks {
-			out = append(out, a)
-		}
-	}
-	return out
+func (m model) animView() string {
+	return RenderCut(m.cutIndex(), m.w, m.h)
+}
+
+// printLastStill writes frame 32. A pipe / CI caller should then return
+// without starting the board, so nothing waits on a key.
+func printLastStill() {
+	fmt.Print(LastStill(0, 0))
 }

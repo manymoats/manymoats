@@ -5,7 +5,8 @@ import (
 	"strings"
 )
 
-// Tower — the lookout. You watch the fleet from it; you never steer from it.
+// Tower is leftover block art. The orch door is the ogre cut; the house door
+// is the word manymoats. Kept so old Metal/silver helpers stay in one file.
 var Tower = []string{
 	"  ▄▄▄  ",
 	" ▟███▙ ",

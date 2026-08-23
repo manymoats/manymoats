@@ -240,6 +240,9 @@ func TestSplashLastFrameIsTheNameAndCredit(t *testing.T) {
 	if strings.Contains(got, "ORCH") || strings.Contains(got, "O R C H") {
 		t.Fatal("the front door hero is manymoats, not orch")
 	}
+	if strings.Contains(got, "▟█████▙") || strings.Contains(got, "◉") {
+		t.Fatal("the house door is the word, not the tower")
+	}
 }
 
 func TestSplashStartsWithoutTheWord(t *testing.T) {

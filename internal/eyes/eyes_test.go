@@ -21,7 +21,8 @@ func TestIndicatorGlyphsMayMove(t *testing.T) {
 	for _, f := range [][]string{
 		{"· 00:00", "• 00:00"}, // the pulse
 		{"▓▓▓░", "▓▓▓▒"},       // meter cells
-		{"⣀⣤⣶", "⣤⣶⣿"},         // the trace
+		{"⣀⣤⣶", "⣤⣶⣿"},         // the old braille trace
+		{"▁▂▃", "▂▃▅"},         // the waveform bars
 	} {
 		if _, payload := Motion(f); len(payload) > 0 {
 			t.Errorf("%v: an indicator was reported as a payload: %v", f, payload)

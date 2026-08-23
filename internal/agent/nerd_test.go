@@ -38,6 +38,34 @@ func TestNerdGlyphsStayInThePatchedRanges(t *testing.T) {
 	}
 }
 
+func TestALinuxFontDirCounts(t *testing.T) {
+	d := t.TempDir()
+	t.Setenv("HOME", d)
+	fonts := filepath.Join(d, ".local", "share", "fonts", "truetype")
+	if err := os.MkdirAll(fonts, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if NerdFontInstalled() {
+		t.Fatal("empty linux font dir must report false")
+	}
+	os.WriteFile(filepath.Join(fonts, "JetBrainsMonoNerdFont-Regular.ttf"), []byte("x"), 0o644)
+	if !NerdFontInstalled() {
+		t.Fatal("a Nerd Font under ~/.local/share/fonts must count")
+	}
+}
+
+func TestNerdOverlayRefusesEmoji(t *testing.T) {
+	if nerdGlyphOK("🦙") {
+		t.Fatal("an emoji must not be treated as a usable nerd glyph")
+	}
+	if nerdGlyphOK("✶") {
+		t.Fatal("a unicode mark is not a nerd glyph — that path is PUA only")
+	}
+	if !nerdGlyphOK("\uF111") {
+		t.Fatal("a 1-cell PUA circle must be accepted")
+	}
+}
+
 func nerdMarks(t *testing.T) []Mark {
 	t.Helper()
 	var ms []Mark

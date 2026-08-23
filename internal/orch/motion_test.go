@@ -79,7 +79,13 @@ func TestOnlyTheFrontierEverMoves(t *testing.T) {
 	// adversary seat was right that shading a bar's frontier moves the readable
 	// level by a whole division — so they hold still and liveness lives in one
 	// cell that encodes nothing.
-	affordance := func(r rune) bool { return r == '·' || r == '•' }
+	affordance := func(r rune) bool {
+		switch r {
+		case '·', '•', '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█', ' ':
+			return true
+		}
+		return false
+	}
 
 	for _, v := range []view{viewMarks, viewInstrument, viewWaveform, viewCards, viewMinimal} {
 		m := base
