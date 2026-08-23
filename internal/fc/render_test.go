@@ -1,6 +1,7 @@
 package fc
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/manymoats/manymoats/internal/credits"
+	"github.com/manymoats/manymoats/internal/version"
 )
 
 func testApp(t *testing.T, plain bool, h *credits.Holdings) app {
@@ -248,6 +250,29 @@ func TestHelpCarriesTheQuietLineAndIsNeverGated(t *testing.T) {
 	}
 	if code := run([]string{"--version"}); code != 0 {
 		t.Errorf("--version exited %d", code)
+	}
+}
+
+func TestVersionIsTheBinaryNotAPrivateNumber(t *testing.T) {
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	old := os.Stdout
+	os.Stdout = w
+	code := run([]string{"--version"})
+	w.Close()
+	os.Stdout = old
+	b, _ := io.ReadAll(r)
+	out := string(b)
+	if code != 0 {
+		t.Fatalf("--version exited %d", code)
+	}
+	if !strings.Contains(out, version.V) {
+		t.Fatalf("credits --version must use the binary's version, got %q", out)
+	}
+	if strings.Contains(out, "0.1.0") && version.V != "0.1.0" {
+		t.Fatal("credits --version must not invent its own number")
 	}
 }
 

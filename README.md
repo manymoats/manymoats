@@ -77,13 +77,11 @@ Homebrew does not upgrade this on its own.
 manymoats update
 ```
 
-That runs `brew upgrade manymoats`. The first time you run `manymoats` it asks
-if you want updates while we fix bugs. Yes turns on Homebrew's autoupdate
-(`brew autoupdate start --upgrade`). Delete `~/.config/manymoats/seen` to get
-asked again.
+That runs `brew upgrade manymoats`. First run asks if you want updates while we
+fix bugs. Yes turns on `brew autoupdate start --upgrade`. Delete
+`~/.config/manymoats/seen` to get asked again.
 
-`brew upgrade` on its own reads a cached copy of the tap and will tell you the
-version you already have is the newest one. `brew update` fetches first.
+`brew upgrade` alone can miss a new version until you `brew update` first.
 
 ## Build from source
 

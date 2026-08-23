@@ -9,16 +9,14 @@ import (
 	"time"
 
 	"github.com/manymoats/manymoats/internal/credits"
+	"github.com/manymoats/manymoats/internal/version"
 )
 
 // invocation is how this tool is actually typed. It lives in one place so the
 // help, the errors and the examples can never disagree about its own name.
 const invocation = "manymoats credits"
 
-const (
-	version     = "0.1.0"
-	catalogDate = "2026-08-21"
-)
+const catalogDate = "2026-08-21"
 
 type opts struct {
 	plain     bool
@@ -93,7 +91,7 @@ func run(args []string) int {
 		fmt.Print(helpText(marks{plain: o.plain}))
 		return 0
 	case "version":
-		fmt.Printf(invocation+" %s\ncatalog %s, dated %s\n\n  %s\n", version, "1", catalogDate, makerLine)
+		fmt.Printf(invocation+" %s\ncatalog %s, dated %s\n\n  %s\n", version.V, "1", catalogDate, makerLine)
 		return 0
 	}
 
