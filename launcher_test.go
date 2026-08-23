@@ -1,6 +1,11 @@
 package main
 
-import "testing"
+import (
+	"strings"
+	"testing"
+
+	"github.com/manymoats/manymoats/internal/launcher"
+)
 
 // The founder types "manymoats -- orch". It printed nothing at all, because "--"
 // was read as the name of an app. "--" is also the POSIX end-of-options marker,
@@ -31,5 +36,25 @@ func TestSeparatorAndDashedFormsReachTheApp(t *testing.T) {
 	// a bare "--" with nothing after it is the directory, not an error
 	if len(normalise([]string{"--"}, all)) != 0 {
 		t.Error(`"--" alone should fall through to the directory`)
+	}
+}
+
+func TestNoAnimIsNotAnApp(t *testing.T) {
+	got := dropNoAnim(normalise([]string{"--no-anim"}, apps()))
+	if len(got) != 0 {
+		t.Fatalf("--no-anim should fall through to the directory, got %v", got)
+	}
+}
+
+func TestTheDirectoryNameIsLowercase(t *testing.T) {
+	got := launcher.Directory(apps())
+	if strings.Contains(got, "MANYMOATS") || strings.Contains(got, "ManyMoats") || strings.Contains(got, "ManyMotes") {
+		t.Fatal("the word is manymoats, never a capital M")
+	}
+	if !strings.Contains(got, "manymoats") {
+		t.Fatal("the directory must say manymoats")
+	}
+	if !strings.Contains(got, "by manymoats") {
+		t.Fatal("the directory must finish with the credit")
 	}
 }

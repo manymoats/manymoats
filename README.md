@@ -71,9 +71,16 @@ pass is the failure the tool was built to stop.
 
 ## Update
 
+Homebrew does not upgrade this on its own.
+
 ```bash
-brew update && brew upgrade manymoats
+manymoats update
 ```
+
+That runs `brew upgrade manymoats`. The first time you run `manymoats` it asks
+if you want updates while we fix bugs. Yes turns on Homebrew's autoupdate
+(`brew autoupdate start --upgrade`). Delete `~/.config/manymoats/seen` to get
+asked again.
 
 `brew upgrade` on its own reads a cached copy of the tap and will tell you the
 version you already have is the newest one. `brew update` fetches first.

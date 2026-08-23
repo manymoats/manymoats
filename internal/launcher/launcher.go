@@ -49,7 +49,8 @@ func Directory(apps []App) string {
 	}
 
 	var b strings.Builder
-	b.WriteString("\n  " + bright.Bold(true).Render("MANYMOATS") + "  " + dim.Render(version.V) + "\n\n")
+	// The word is always lowercase. A capital M is a different name.
+	b.WriteString("\n  " + bright.Bold(true).Render("manymoats") + "  " + dim.Render(version.V) + "\n\n")
 	for _, a := range apps {
 		state := dim.Render("soon")
 		name := mid.Render(a.Name)
@@ -66,7 +67,8 @@ func Directory(apps []App) string {
 			break
 		}
 	}
-	b.WriteString("\n  " + dim.Render("run one:") + "  " + mid.Render("manymoats "+ready) + "\n\n")
+	b.WriteString("\n  " + dim.Render("run one:") + "  " + mid.Render("manymoats "+ready) + "\n")
+	b.WriteString("  " + dim.Render("by manymoats") + "\n\n")
 	return b.String()
 }
 
