@@ -4,11 +4,13 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/termenv"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/manymoats/manymoats/internal/agent"
+	"github.com/manymoats/manymoats/internal/collect"
 )
 
 func render(m model) (s string, panicked any) {
@@ -406,5 +408,68 @@ func TestClippingKeepsTheVisiblePrefix(t *testing.T) {
 		if plainOut != want {
 			t.Errorf("w=%d: content mangled\n  got  %q\n  want prefix of %q", w, plainOut, plainIn)
 		}
+	}
+}
+
+func TestDefaultBoardDoesNotShowStalledOrIdle(t *testing.T) {
+	var as []agent.Agent
+	for i := 0; i < 14; i++ {
+		as = append(as, agent.Agent{
+			Source: agent.Claude, Model: "opus", Project: "kpf",
+			State: agent.Stalled, Since: time.Hour,
+		})
+	}
+	as = append(as, agent.Agent{
+		Source: agent.Claude, Model: "opus", Project: "old",
+		State: agent.Idle, Since: 2 * time.Hour,
+	})
+	for _, v := range []view{viewMarks, viewInstrument, viewWaveform, viewCards} {
+		out := stripANSI(model{w: 100, h: 40, agents: as, view: v}.View())
+		if strings.Contains(out, "stalled") {
+			t.Errorf("%s default view shows stalled:\n%s", v, out)
+		}
+		if strings.Contains(out, "idle") {
+			t.Errorf("%s default view shows idle:\n%s", v, out)
+		}
+	}
+}
+
+func TestOldClaudeJSONLWithoutProcessIsNotStalledOnDefaultView(t *testing.T) {
+	root := t.TempDir()
+	line := `{"type":"assistant","timestamp":"2026-08-23T01:00:00Z","cwd":"/tmp/kpf","sessionId":"11111111-1111-1111-1111-111111111111","message":{"model":"claude-opus-5","content":"Are you there?"}}`
+	for i := 0; i < 14; i++ {
+		p := filepath.Join(root, "-tmp-kpf", "s"+string(rune('a'+i))+".jsonl")
+		if err := os.MkdirAll(filepath.Dir(p), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(line+"\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		at := time.Now().Add(-time.Hour)
+		if err := os.Chtimes(p, at, at); err != nil {
+			t.Fatal(err)
+		}
+	}
+	as, err := collect.ClaudeSessions(root, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(as) != 14 {
+		t.Fatalf("got %d sessions", len(as))
+	}
+	for _, a := range as {
+		if a.State == agent.Stalled {
+			t.Fatalf("old jsonl + no process must not be stalled, got %s", a.State)
+		}
+		if a.State != agent.Idle {
+			t.Fatalf("old jsonl + no process must be idle, got %s", a.State)
+		}
+	}
+	out := stripANSI(model{w: 100, h: 40, agents: as, view: viewInstrument}.View())
+	if strings.Contains(out, "stalled") {
+		t.Fatalf("default instrument filled with stalled:\n%s", out)
+	}
+	if strings.Count(out, "opus") > 0 && strings.Contains(out, "stalled") {
+		t.Fatal("dead sessions leaked onto the first screen")
 	}
 }

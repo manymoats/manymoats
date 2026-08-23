@@ -12,6 +12,63 @@ func TestStalledIsReachable(t *testing.T) {
 	}
 }
 
+func TestClassifyAliveFalseIsIdle(t *testing.T) {
+	// A dead process is idle even when the jsonl is fresh, ends on a
+	// question, or has been quiet long enough that an alive session
+	// would stall.
+	cases := []struct {
+		last string
+		q    bool
+		idle time.Duration
+	}{
+		{"assistant", false, time.Second},
+		{"assistant", true, 20 * time.Minute},
+		{"assistant", false, 20 * time.Minute},
+		{"user", false, 2 * time.Hour},
+	}
+	for _, c := range cases {
+		if got := Classify(c.last, c.q, true, c.idle, false); got != Idle {
+			t.Errorf("alive=false last=%s q=%v idle=%s: got %v, want idle", c.last, c.q, c.idle, got)
+		}
+	}
+}
+
+func TestOnlyActiveIsWorkingAndAsks(t *testing.T) {
+	as := []Agent{
+		{State: Working, Project: "a"},
+		{State: Asks, Project: "b"},
+		{State: Stalled, Project: "c"},
+		{State: Idle, Project: "d"},
+		{State: Done, Project: "e"},
+		{State: Resident, Project: "f"},
+	}
+	got := OnlyActive(as)
+	if len(got) != 2 {
+		t.Fatalf("only working+asks belong on the default board, got %d", len(got))
+	}
+	if got[0].State != Working || got[1].State != Asks {
+		t.Fatalf("got %v %v", got[0].State, got[1].State)
+	}
+}
+
+func TestWorkingSidechainStaysOnTheBoard(t *testing.T) {
+	as := []Agent{
+		{Project: "p", State: Idle},
+		{Project: "p", State: Working, Sidechain: true},
+		{Project: "p", State: Idle, Sidechain: true},
+	}
+	got := RollUpSubagents(as)
+	if len(got) != 2 {
+		t.Fatalf("parent + working child, got %d rows", len(got))
+	}
+	if got[0].Subagents != 2 {
+		t.Fatalf("parent should still count both children, got %d", got[0].Subagents)
+	}
+	if !got[1].Sidechain || got[1].State != Working {
+		t.Fatal("a working subagent must stay visible")
+	}
+}
+
 func TestEvaluationOrder(t *testing.T) {
 	cases := []struct {
 		name     string

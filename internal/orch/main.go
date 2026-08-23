@@ -159,8 +159,7 @@ func hostRefresh() tea.Msg {
 }
 
 func refresh() tea.Msg {
-	home, _ := os.UserHomeDir()
-	as, err := collect.ClaudeSessions(filepath.Join(home, ".claude", "projects"), nil)
+	as, err := collect.ClaudeAll(collect.ClaudeLive())
 	if err != nil {
 		return err
 	}
