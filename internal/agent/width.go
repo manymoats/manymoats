@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"strings"
 	"sync"
 
 	"github.com/mattn/go-runewidth"
@@ -40,9 +41,6 @@ func (m Mark) Tiny() string {
 }
 
 func (m Mark) Big() (top, mid, bot string) {
-	if AmbiguousWide() {
-		return "", m.ASCII, ""
-	}
 	mid = m.safe(m.Mid)
 	if mid == m.ASCII {
 		return "", m.ASCII, ""
@@ -50,18 +48,18 @@ func (m Mark) Big() (top, mid, bot string) {
 	return m.Top, mid, m.Bot
 }
 
-// safe never emits a glyph that will take the wrong number of cells. A Nerd
-// Font PUA that the terminal cannot see still reports as width 1, so we also
-// refuse anything that is not a single cell, and we refuse when the locale
-// treats the mark as wide. ASCII is the honest leftover.
+// safe never emits a glyph that will take the wrong number of cells. LANG
+// does not flip the whole board to ASCII — only this glyph is measured.
+// A blank ASCII leftover is worse than a plain middle-dot, so we never
+// return a space and call it an icon.
 func (m Mark) safe(g string) string {
-	if AmbiguousWide() {
+	if g != "" && GlyphFits(g) {
+		return g
+	}
+	if strings.TrimSpace(m.ASCII) != "" {
 		return m.ASCII
 	}
-	if g == "" || !GlyphFits(g) {
-		return m.ASCII
-	}
-	return g
+	return "·"
 }
 
 func Width(s string) int { return runewidth.StringWidth(s) }

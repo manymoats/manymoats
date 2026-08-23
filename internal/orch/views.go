@@ -206,7 +206,7 @@ func plural(n int, one, many string) string {
 
 func (m model) instrument() string {
 	var b strings.Builder
-	b.WriteString(m.header("orch · instrument"))
+	b.WriteString(m.header("instrument"))
 	vis := m.visible()
 	mw, pw := colWidths(vis, m.names)
 	for i, a := range vis {
@@ -321,7 +321,7 @@ func traceLevel(v float64, levels int) int {
 
 func (m model) waveform() string {
 	var b strings.Builder
-	b.WriteString(m.header("orch · waveform"))
+	b.WriteString(m.header("waveform"))
 	vis := m.visible()
 	for i, a := range vis {
 		if i >= 6 {
@@ -342,7 +342,7 @@ func (m model) waveform() string {
 			// dots (nothing was measured); the last cell is the pulse so the
 			// line is still alive.
 			_, val := Reading(a)
-			b.WriteString("  " + dim.Render(strings.Repeat("·", 25)+liveBar(m.frame)) + "  " + dim.Render(val) + "\n\n")
+			b.WriteString("  " + dim.Render(strings.Repeat("░", 25)+liveBar(m.frame)) + "  " + dim.Render(val) + "\n\n")
 		} else {
 			b.WriteString("  " + dim.Render(strings.Repeat("─", 26)+"  "+a.State.String()) + "\n\n")
 		}
@@ -354,7 +354,7 @@ func (m model) waveform() string {
 
 func (m model) cards() string {
 	var b strings.Builder
-	b.WriteString(m.header("orch · cards"))
+	b.WriteString(m.header("cards"))
 	const w = 28
 	vis := m.visible()
 	// A card for an idle agent costs six rows to say nothing. It is not falsely

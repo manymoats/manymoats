@@ -262,6 +262,22 @@ func TestWideEmojiDoesNotBreakColumns(t *testing.T) {
 	}
 }
 
+func TestBoardViewsAreNotAnORCHLockup(t *testing.T) {
+	as := []agent.Agent{{Source: agent.Claude, Model: "opus", Project: "kpf", State: agent.Working, TokensMin: 900}}
+	for v := viewMarks; v <= viewMinimal; v++ {
+		out := stripANSI(model{w: 110, h: 40, agents: as, view: v}.View())
+		if strings.Contains(out, "ORCH") || strings.Contains(out, "O R C H") {
+			t.Errorf("%s still prints ORCH as a wordmark", v)
+		}
+		if strings.Contains(out, heroBannedTower) {
+			t.Errorf("%s still draws the tower", v)
+		}
+		if !strings.Contains(out, "by manymoats") && !strings.Contains(out, "manymoats") {
+			t.Errorf("%s dropped the credit", v)
+		}
+	}
+}
+
 func TestMakerIsAlwaysVisible(t *testing.T) {
 	as := []agent.Agent{{Source: agent.Claude, Model: "opus", Project: "kpf", State: agent.Working, TokensMin: 900}}
 	for v := viewSplash; v <= viewMinimal; v++ {

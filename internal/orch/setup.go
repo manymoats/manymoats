@@ -25,8 +25,8 @@ func setup() int {
 
 	fmt.Println("\n  orch icon setup                              by manymoats")
 	fmt.Println("  ────────────────────────────────────────────────────────")
-	fmt.Println("  orch already works. This only swaps the plain shapes for real")
-	fmt.Println("  provider icons, which need a Nerd Font. Nothing here is required.")
+	fmt.Println("  orch already works. This only swaps the plain shapes for")
+	fmt.Println("  Nerd Font ticks. Nothing here is required.")
 
 	term := detectTerminal()
 	fmt.Printf("\n  terminal:  %s\n", term.name)
@@ -38,7 +38,7 @@ func setup() int {
 			fmt.Println("  https://nerdfonts.com and re-run this.")
 			return 0
 		}
-		fmt.Println("\n  orch ships with JetBrainsMono Nerd Font as its default.")
+		fmt.Println("\n  The house mono is " + nerdFamily + ".")
 		fmt.Println("  Would install:  brew install --cask font-jetbrains-mono-nerd-font")
 		fmt.Println("  That adds font files to ~/Library/Fonts. Nothing else is touched.")
 		if !ask("Install it?") {
@@ -64,6 +64,7 @@ func setup() int {
 				fmt.Printf("\n  Could not set it: %v\n", err)
 				fmt.Printf("  Do it by hand:  %s\n", term.manual)
 			} else {
+				term.justSet = true
 				fmt.Println("\n  Set. Open a NEW window — existing ones keep the old font.")
 			}
 		}
@@ -71,27 +72,38 @@ func setup() int {
 		fmt.Printf("\n  Set your terminal's font by hand:\n    %s\n", term.manual)
 	}
 
-	// Somebody who just installed a font and pointed their terminal at it wants
-	// the icons on. Asking again would be ceremony.
-	if agent.NerdFontInstalled() && !agent.UseNerd() {
+	// Only turn icons on after the terminal is actually using the face.
+	// A file on disk with the old font still selected is how you get tofu.
+	fontReady := agent.NerdFontInstalled() && (term.alreadySet() || term.justSet)
+	if fontReady && !agent.UseNerd() {
 		if ask("Turn the icons on?") {
 			setIcons(true)
 		}
 	} else {
 		fmt.Printf("\n  icons are currently: %s\n", map[bool]string{true: "nerd", false: "plain"}[agent.UseNerd()])
+		if agent.NerdFontInstalled() && !term.alreadySet() && !term.justSet {
+			fmt.Println("  Font files are on disk, but this terminal is not using")
+			fmt.Println("  " + nerdFamily + " yet — icons stay off so they do not tofu.")
+		}
 	}
 
-	fmt.Println("\n  Then check with:  orch --icons")
+	fmt.Println("\n  Then check with:  manymoats orch --icons")
 	fmt.Println("  Boxes instead of icons means the font is not reaching the terminal.")
-	fmt.Println("  Turn them on:     orch --icons-on      (or ORCH_ICONS=nerd orch)")
-	fmt.Println("  Turn them off:    orch --icons-off")
+	fmt.Println("  Turn them on:     manymoats orch --icons-on")
+	fmt.Println("  Turn them off:    manymoats orch --icons-off")
 	fmt.Println()
 	return 0
 }
 
+// nerdFamily is the one face we name. Setup, printIcons, and the manual
+// lines all say this — mixing Menlo + Symbols Nerd Font Mono here was how
+// a machine with the right files still drew tofu.
+const nerdFamily = "JetBrainsMono Nerd Font Mono"
+
 type terminalInfo struct {
 	name, change, manual string
 	canSet               bool
+	justSet              bool
 	apply                func() error
 	current              func() string // what font the terminal is on now, "" if unknowable
 }
@@ -108,13 +120,13 @@ func (t terminalInfo) alreadySet() bool {
 }
 
 func detectTerminal() terminalInfo {
-	const family = "'JetBrainsMono Nerd Font Mono', 'JetBrainsMono NFM', monospace"
+	family := "'" + nerdFamily + "', 'JetBrainsMono NFM', monospace"
 	switch os.Getenv("TERM_PROGRAM") {
 	case "Apple_Terminal":
 		return terminalInfo{
 			name: "Terminal.app", canSet: true,
 			change: "font of every Terminal profile → JetBrainsMonoNFM-Regular",
-			manual: "Terminal → Settings → Profiles → Font → JetBrainsMono Nerd Font Mono",
+			manual: "Terminal → Settings → Profiles → Font → " + nerdFamily,
 			current: func() string {
 				out, err := exec.Command("osascript", "-e",
 					`tell application "Terminal" to return font name of settings set (name of default settings)`).Output()
@@ -158,16 +170,16 @@ end tell`).Run()
 		}
 	case "iTerm.app":
 		return terminalInfo{name: "iTerm2",
-			manual: "iTerm2 → Settings → Profiles → Text → Font → JetBrainsMono Nerd Font Mono"}
+			manual: "iTerm2 → Settings → Profiles → Text → Font → " + nerdFamily}
 	case "ghostty":
 		return terminalInfo{name: "Ghostty",
-			manual: `add to ~/.config/ghostty/config:  font-family = JetBrainsMono Nerd Font Mono`}
+			manual: "add to ~/.config/ghostty/config:  font-family = " + nerdFamily}
 	case "WezTerm":
 		return terminalInfo{name: "WezTerm",
-			manual: `in ~/.wezterm.lua:  font = wezterm.font("JetBrainsMono Nerd Font Mono")`}
+			manual: `in ~/.wezterm.lua:  font = wezterm.font("` + nerdFamily + `")`}
 	}
 	return terminalInfo{name: "unknown (" + os.Getenv("TERM_PROGRAM") + ")",
-		manual: "set your terminal's font to: JetBrainsMono Nerd Font Mono"}
+		manual: "set your terminal's font to: " + nerdFamily}
 }
 
 func vscodeSettings() string {

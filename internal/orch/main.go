@@ -443,7 +443,7 @@ func (m model) View() string {
 // the colour tells you where without reading a word.
 func (m model) marks() string {
 	var b strings.Builder
-	b.WriteString(m.header("orch"))
+	b.WriteString(m.header(""))
 	vis := m.visible()
 	single := agent.SingleProject(vis)
 	order, byProject := agent.GroupByProject(vis)
@@ -625,13 +625,12 @@ func printIcons() {
 	fmt.Println("  A boxed nerd glyph is a defect — we print the ascii instead.")
 	fmt.Println()
 	if agent.NerdFontInstalled() && !agent.UseNerd() {
-		fmt.Println("  Font is on disk. Turn icons on:  orch --icons-on")
-		fmt.Println("  (or ORCH_ICONS=nerd). The terminal font must name it:")
-		fmt.Println("    JetBrainsMono Nerd Font Mono")
+		fmt.Println("  Font is on disk. Turn icons on:  manymoats orch --icons-on")
+		fmt.Println("  The terminal font must name " + nerdFamily + ".")
 	}
 	if !agent.NerdFontInstalled() {
 		fmt.Println("  No Nerd Font on disk. orch keeps using ascii/unicode.")
-		fmt.Println("  orch setup can install JetBrainsMono Nerd Font.")
+		fmt.Println("  manymoats orch setup can install " + nerdFamily + ".")
 	}
 	fmt.Println()
 }
@@ -767,7 +766,9 @@ func Main() int {
 			printLastStill()
 			return 0
 		}
-		start.view = viewSplash
+		// Skip the intro only. The board still runs so the pulse can tick.
+		// A still of the cut was already printed for a pipe/CI above.
+		start.view = viewMarks
 	}
 	p := tea.NewProgram(start)
 	if _, err := p.Run(); err != nil {
