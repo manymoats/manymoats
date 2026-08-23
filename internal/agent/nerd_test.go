@@ -54,6 +54,26 @@ func TestALinuxFontDirCounts(t *testing.T) {
 	}
 }
 
+func TestUseNerdDefaultsOffAndIsNeverInferredFromAFontFile(t *testing.T) {
+	d := t.TempDir()
+	t.Setenv("HOME", d)
+	t.Setenv("ORCH_ICONS", "")
+	if UseNerd() {
+		t.Fatal("nerd is opt-in — default is off")
+	}
+	fonts := filepath.Join(d, "Library", "Fonts")
+	if err := os.MkdirAll(fonts, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	os.WriteFile(filepath.Join(fonts, "JetBrainsMonoNerdFont-Regular.ttf"), []byte("x"), 0o644)
+	if !NerdFontInstalled() {
+		t.Fatal("the file is there")
+	}
+	if UseNerd() {
+		t.Fatal("a font file on disk is not a yes — Cursor will tofu")
+	}
+}
+
 func TestNerdOverlayRefusesEmoji(t *testing.T) {
 	if nerdGlyphOK("🦙") {
 		t.Fatal("an emoji must not be treated as a usable nerd glyph")

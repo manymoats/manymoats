@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/manymoats/manymoats/internal/agent"
 )
 
 func TestCutLastFrameIsTheSitAndTheCredit(t *testing.T) {
@@ -142,6 +144,24 @@ func TestSplashViewIsTheLastStill(t *testing.T) {
 	}
 	if !strings.Contains(want, "by manymoats") {
 		t.Fatal("LastStill missing credit")
+	}
+	if stripANSI(model{w: 96, h: 48, view: viewSplash}.View()) != stripANSI(model{w: 96, h: 48, view: viewAnim, animLong: true, animElapsed: longMS}.View()) {
+		t.Fatal("splash is a second movie — it must be the last frame of the cut")
+	}
+}
+
+func TestWaveformUsesMeterGlyphsNotBraille(t *testing.T) {
+	as := []agent.Agent{{Source: agent.Claude, Model: "opus", Project: "p", State: agent.Working, TokensMin: 10400}}
+	m := model{w: 100, h: 40, agents: as, view: viewWaveform}
+	m.record(as)
+	out := stripANSI(m.View())
+	for _, r := range out {
+		if r >= 0x2800 && r <= 0x28FF {
+			t.Fatal("waveform still uses braille — default Mac mono does not have those glyphs")
+		}
+	}
+	if !strings.ContainsAny(out, "▁▂▃▅█░") {
+		t.Fatal("waveform must use the same block cells as the meter")
 	}
 }
 

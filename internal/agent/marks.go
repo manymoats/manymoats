@@ -138,29 +138,10 @@ func load() {
 	if json.Unmarshal(marksJSON, &list) != nil {
 		list = nil
 	}
-	if UseNerd() {
-		var nerd []Mark
-		if json.Unmarshal(marksNerdJSON, &nerd) == nil {
-			over := map[string]Mark{}
-			for _, n := range nerd {
-				over[n.ID] = n
-			}
-			for i, m := range list {
-				if n, ok := over[m.ID]; ok && nerdGlyphOK(n.Glyph) {
-					list[i].Glyph = n.Glyph
-					// Big() reads Mid. Leaving it on the unicode set meant the
-					// splash and the board showed the same source two ways.
-					list[i].Mid = n.Glyph
-					if n.Top != "" {
-						list[i].Top = n.Top
-					}
-					if n.Bot != "" {
-						list[i].Bot = n.Bot
-					}
-				}
-			}
-		}
-	}
+	// Provider marks stay on the unicode set. Nerd PUA is for tool ticks
+	// (Icon), never mascots — overlaying it here is how Cursor's terminal
+	// drew a board of tofu even after the user opted in. The nerd JSON is
+	// kept so the patched-range test still guards what we ship.
 	// A user file wins, so anyone can add a provider without rebuilding.
 	if home, err := os.UserHomeDir(); err == nil {
 		if b, err := os.ReadFile(filepath.Join(home, ".orch", "marks.json")); err == nil {

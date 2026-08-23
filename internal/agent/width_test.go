@@ -48,6 +48,20 @@ func TestEveryMarkHasAnASCIIFallback(t *testing.T) {
 	}
 }
 
+func TestOpenrouterIsNeverABlankCell(t *testing.T) {
+	t.Setenv("ORCH_ICONS", "unicode")
+	resetMarks()
+	defer func() { t.Setenv("ORCH_ICONS", ""); resetMarks() }()
+	m := MarkFor(Source("openrouter"))
+	if strings.TrimSpace(m.ASCII) == "" {
+		t.Fatal("openrouter ascii is a space — that emptied the board")
+	}
+	_, mid, _ := m.Render()
+	if strings.TrimSpace(mid) == "" {
+		t.Fatal("openrouter rendered as a blank cell")
+	}
+}
+
 func TestAWideGlyphFallsBackToASCII(t *testing.T) {
 	SetAmbiguousWide(false)
 	m := Mark{Glyph: "🦙", ASCII: "*", Mid: "🦙"}

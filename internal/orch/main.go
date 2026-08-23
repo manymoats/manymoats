@@ -25,8 +25,8 @@ type tickMsg time.Time
 type view int
 
 const (
-	viewAnim view = iota
-	viewSplash
+	viewAnim   view = iota
+	viewSplash      // last still of the same cut — not a second movie
 	viewMarks
 	viewInstrument
 	viewWaveform
@@ -113,6 +113,9 @@ func pulse() tea.Cmd {
 	return tea.Tick(pulseMS*time.Millisecond, func(t time.Time) tea.Msg { return pulseMsg(t) })
 }
 
+// probeAmbiguousWide is a WIDTH measurement for East-Asian ambiguous runes.
+// It must never be treated as a board-wide "use ASCII" switch — that emptied
+// cells whose fallback was a space. Each glyph is decided by GlyphFits.
 func probeAmbiguousWide() bool {
 	for _, k := range []string{"ORCH_AMBIGUOUS_WIDE", "RUNEWIDTH_EASTASIAN"} {
 		switch os.Getenv(k) {

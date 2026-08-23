@@ -259,12 +259,13 @@ func trace(h []float64, _ int, _ bool) string {
 	const cells = 26
 	glyphs := waveBars
 	if len(h) == 0 {
-		return strings.Repeat("·", cells)
+		return strings.Repeat("░", cells)
 	}
 	var s strings.Builder
-	// Not yet a full window: the empty part reads as "no reading yet", not zero.
+	// Not yet a full window: the empty part is the same empty cell the meter
+	// uses. A row of · looked broken on the Mac mono that ships with Terminal.
 	for i := 0; i < cells-len(h); i++ {
-		s.WriteRune('·')
+		s.WriteRune('░')
 	}
 	for n, v := range h {
 		// A window-relative scale would redraw every historical cell the moment a
@@ -284,10 +285,10 @@ func trace(h []float64, _ int, _ bool) string {
 	return s.String()
 }
 
-// waveBars is the waveform alphabet. Unicode, one cell each, same weight as
-// the mono face. Nerd Font waveform glyphs are a fallback we do not need:
-// these already render, and they never tofu.
-var waveBars = []rune(" ▁▂▃▅█")
+// waveBars is the waveform alphabet. Same block cells the meter already uses,
+// which default Mac mono has. A leading space punched holes that read as a
+// broken render. There is no sine-wave toy here — the shape is recorded history.
+var waveBars = []rune("▁▂▃▅█")
 
 func liveBar(frame int) string {
 	return string(waveBars[1+(frame/2)%(len(waveBars)-1)])
